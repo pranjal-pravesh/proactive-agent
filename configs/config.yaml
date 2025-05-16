@@ -1,0 +1,42 @@
+# Voice Assistant Configuration
+
+# Audio settings
+audio:
+  sample_rate: 16000  # Audio sample rate in Hz
+  block_duration: 0.5  # Audio processing block duration in seconds
+  channels: 1  # Mono audio
+
+# Speech-to-Text settings
+stt:
+  model_size: "medium"  # Whisper model size (tiny, base, small, medium, large)
+  compute_type: "int8"  # Computation type (float32, float16, int8)
+  device: "cpu"  # Device to run inference on (cpu, cuda)
+
+# Voice Activity Detection settings
+vad:
+  threshold: 0.5  # Voice detection threshold (0.0 to 1.0)
+  min_speech_duration_ms: 150  # Minimum speech duration in milliseconds
+  speech_pad_ms: 400  # Additional padding around speech in milliseconds
+
+# Intent Recognition settings
+intent:
+  model_path: null  # Path to intent recognition model (if any)
+  confidence_threshold: 0.7  # Threshold for intent confidence (0.0 to 1.0)
+
+# Sentiment Analysis settings
+sentiment:
+  model_path: null  # Path to sentiment analysis model (if any)
+
+# Context Management settings
+context:
+  max_history: 10  # Maximum conversation turns to keep in history
+
+# Task Execution settings
+executor:
+  default_tasks:
+    - greeting
+    - farewell
+    - help
+    - weather
+    - time
+    - reminder 
