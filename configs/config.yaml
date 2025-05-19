@@ -35,6 +35,8 @@ context:
 gating_classifiers:
   actionable_model_path: "./src/gating_classifiers/models/mobilebert-finetuned-actionable"  # Path to actionable classifier model
   actionable_threshold: 0.5  # Confidence threshold for actionable classification
+  contextable_model_path: "./src/gating_classifiers/models/mobilebert-finetuned-contextable"  # Path to contextable classifier model
+  contextable_threshold: 0.5  # Confidence threshold for contextable classification
 
 # Task Execution settings
 executor:

@@ -1,1 +1,2 @@
-from src.gating_classifiers.actionable_classifier import ActionableClassifier 
+from src.gating_classifiers.actionable_classifier import ActionableClassifier
+from src.gating_classifiers.contextable_classifier import ContextableClassifier 

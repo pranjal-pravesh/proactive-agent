@@ -15,7 +15,7 @@ from src.intent import IntentRecognizer
 from src.sentiment import SentimentAnalyzer
 from src.context import ContextManager
 from src.executor import TaskExecutor
-from src.gating_classifiers import ActionableClassifier
+from src.gating_classifiers import ActionableClassifier, ContextableClassifier
 
 # --- Constants ---
 DEFAULT_CONFIG_PATH = "configs/config.yaml"
@@ -82,6 +82,12 @@ class VoiceAssistant:
                       "./src/gating_classifiers/models/mobilebert-finetuned-actionable")
         )
         
+        self.console.print("[bold cyan]Initializing Contextable Classifier...[/bold cyan]")
+        self.contextable_classifier = ContextableClassifier(
+            model_path=self.config.get("gating_classifiers", {}).get("contextable_model_path", 
+                      "./src/gating_classifiers/models/mobilebert-finetuned-contextable")
+        )
+        
         # Audio queue and state
         self.audio_queue = queue.Queue()
         self.buffered_audio = []
@@ -90,6 +96,7 @@ class VoiceAssistant:
         self.last_transcript = ""
         self.last_response = ""
         self.last_actionable = None
+        self.last_contextable = None
     
     def _load_config(self, config_path):
         """
@@ -174,8 +181,12 @@ class VoiceAssistant:
             text.append("None yet\n", style="dim")
         
         if self.last_actionable:
-            text.append(f"Classification: {self.last_actionable['prediction']} " +
+            text.append(f"Actionable: {self.last_actionable['prediction']} " +
                        f"(Confidence: {self.last_actionable['confidence']:.2f})\n", style="yellow")
+        
+        if self.last_contextable:
+            text.append(f"Contextable: {self.last_contextable['prediction']} " +
+                       f"(Confidence: {self.last_contextable['confidence']:.2f})\n", style="yellow")
             
         text.append(f"Last response:\n", style="bold white")
         if self.last_response:
@@ -222,9 +233,15 @@ class VoiceAssistant:
             actionable_result = self.actionable_classifier.is_actionable(self.last_transcript)
             self.last_actionable = actionable_result
             
-            # Log classification result
+            # Classify if contextable
+            contextable_result = self.contextable_classifier.is_contextable(self.last_transcript)
+            self.last_contextable = contextable_result
+            
+            # Log classification results
             self.console.print(f"[bold blue]Actionable Classification:[/bold blue] {actionable_result['prediction']} " +
                               f"(Confidence: {actionable_result['confidence']:.2f})")
+            self.console.print(f"[bold blue]Contextable Classification:[/bold blue] {contextable_result['prediction']} " +
+                              f"(Confidence: {contextable_result['confidence']:.2f})")
             
             # Only process further if transcript is actionable
             if actionable_result["actionable"]:
@@ -242,13 +259,17 @@ class VoiceAssistant:
             else:
                 self.last_response = "That doesn't seem like a command or request I can act on."
             
-            # Update context
-            self.context_manager.add_to_history(
-                self.last_transcript, 
-                self.last_response,
-                actionable_result.get("prediction", "Unknown"),
-                {}  # We can pass the intent and sentiment later if needed
-            )
+            # Update context only if the input is contextable
+            if contextable_result["contextable"]:
+                self.context_manager.add_to_history(
+                    self.last_transcript, 
+                    self.last_response,
+                    actionable_result.get("prediction", "Unknown"),
+                    {}  # We can pass the intent and sentiment later if needed
+                )
+                self.console.print("[bold magenta]Added to context memory[/bold magenta]")
+            else:
+                self.console.print("[bold magenta]Not adding to context memory[/bold magenta]")
             
             self.console.print(f"[bold green]Response:[/bold green] {self.last_response}")
         
