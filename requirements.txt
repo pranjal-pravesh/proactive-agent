@@ -8,3 +8,4 @@ silero>=0.0.1
 transformers>=4.20.0
 sentencepiece>=0.1.97
 scipy>=1.9.0 
+spacy>=3.3.0

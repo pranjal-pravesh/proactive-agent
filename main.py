@@ -15,6 +15,7 @@ from src.intent import IntentRecognizer
 from src.sentiment import SentimentAnalyzer
 from src.context import ContextManager
 from src.executor import TaskExecutor
+from src.gating_classifiers import ActionableClassifier
 
 # --- Constants ---
 DEFAULT_CONFIG_PATH = "configs/config.yaml"
@@ -75,6 +76,12 @@ class VoiceAssistant:
         self.console.print("[bold cyan]Initializing Task Executor...[/bold cyan]")
         self.task_executor = TaskExecutor()
         
+        self.console.print("[bold cyan]Initializing Actionable Classifier...[/bold cyan]")
+        self.actionable_classifier = ActionableClassifier(
+            model_path=self.config.get("gating_classifiers", {}).get("actionable_model_path", 
+                      "./src/gating_classifiers/models/mobilebert-finetuned-actionable")
+        )
+        
         # Audio queue and state
         self.audio_queue = queue.Queue()
         self.buffered_audio = []
@@ -82,6 +89,7 @@ class VoiceAssistant:
         self.last_speech_time = time.time()
         self.last_transcript = ""
         self.last_response = ""
+        self.last_actionable = None
     
     def _load_config(self, config_path):
         """
@@ -164,6 +172,10 @@ class VoiceAssistant:
             text.append(f"{self.last_transcript}\n", style="bright_white")
         else:
             text.append("None yet\n", style="dim")
+        
+        if self.last_actionable:
+            text.append(f"Classification: {self.last_actionable['prediction']} " +
+                       f"(Confidence: {self.last_actionable['confidence']:.2f})\n", style="yellow")
             
         text.append(f"Last response:\n", style="bold white")
         if self.last_response:
@@ -206,24 +218,36 @@ class VoiceAssistant:
         self.console.print(f"[bold green]Transcription:[/bold green] {self.last_transcript}")
         
         if self.last_transcript.strip():
-            # Recognize intent
-            intent_data = self.intent_recognizer.recognize_intent(self.last_transcript)
+            # Classify if actionable
+            actionable_result = self.actionable_classifier.is_actionable(self.last_transcript)
+            self.last_actionable = actionable_result
             
-            # Analyze sentiment
-            sentiment_data = self.sentiment_analyzer.analyze_sentiment(self.last_transcript)
+            # Log classification result
+            self.console.print(f"[bold blue]Actionable Classification:[/bold blue] {actionable_result['prediction']} " +
+                              f"(Confidence: {actionable_result['confidence']:.2f})")
             
-            # Execute task based on intent
-            result = self.task_executor.execute_task(intent_data, self.context_manager.get_context())
-            
-            # Update response
-            self.last_response = result.get("response", "I processed that, but I'm not sure how to respond.")
+            # Only process further if transcript is actionable
+            if actionable_result["actionable"]:
+                # Recognize intent
+                intent_data = self.intent_recognizer.recognize_intent(self.last_transcript)
+                
+                # Analyze sentiment
+                sentiment_data = self.sentiment_analyzer.analyze_sentiment(self.last_transcript)
+                
+                # Execute task based on intent
+                result = self.task_executor.execute_task(intent_data, self.context_manager.get_context())
+                
+                # Update response
+                self.last_response = result.get("response", "I processed that, but I'm not sure how to respond.")
+            else:
+                self.last_response = "That doesn't seem like a command or request I can act on."
             
             # Update context
             self.context_manager.add_to_history(
                 self.last_transcript, 
                 self.last_response,
-                intent_data,
-                sentiment_data
+                actionable_result.get("prediction", "Unknown"),
+                {}  # We can pass the intent and sentiment later if needed
             )
             
             self.console.print(f"[bold green]Response:[/bold green] {self.last_response}")

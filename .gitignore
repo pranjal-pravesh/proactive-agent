@@ -71,4 +71,7 @@ venv.bak/
 *.mp3
 *.pcm
 model_cache/
-recorded_audio/ 
+recorded_audio/
+gating_classifiers/models/
+src/gating_classifiers/models/
+mobilebert-finetuned-actionable/ 

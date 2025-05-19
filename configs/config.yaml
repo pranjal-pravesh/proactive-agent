@@ -31,6 +31,11 @@ sentiment:
 context:
   max_history: 10  # Maximum conversation turns to keep in history
 
+# Gating Classifiers settings
+gating_classifiers:
+  actionable_model_path: "./src/gating_classifiers/models/mobilebert-finetuned-actionable"  # Path to actionable classifier model
+  actionable_threshold: 0.5  # Confidence threshold for actionable classification
+
 # Task Execution settings
 executor:
   default_tasks:

@@ -13,22 +13,25 @@ class ContextManager:
         self.conversation_history = []
         self.current_context = {}
     
-    def add_to_history(self, user_input, system_response, intent=None, sentiment=None):
+    def add_to_history(self, user_input, system_response, classification=None, metadata=None):
         """
         Add a conversation turn to history
         
         Args:
             user_input: User's transcribed speech
             system_response: System's response
-            intent: Recognized intent (if any)
-            sentiment: Detected sentiment (if any)
+            classification: Input classification (actionable, intent, etc.)
+            metadata: Additional metadata about the turn (intent, sentiment, etc.)
         """
+        if metadata is None:
+            metadata = {}
+            
         turn = {
             "timestamp": None,  # TODO: Add timestamp
             "user_input": user_input,
             "system_response": system_response,
-            "intent": intent,
-            "sentiment": sentiment
+            "classification": classification,
+            "metadata": metadata
         }
         
         self.conversation_history.append(turn)
