@@ -18,6 +18,15 @@ vad:
   min_speech_duration_ms: 150  # Minimum speech duration in milliseconds
   speech_pad_ms: 400  # Additional padding around speech in milliseconds
 
+# LLM settings
+llm:
+  model_path: "models/Qwen3-1.7B-Q4_0.gguf"  # Path to the GGUF model
+  n_ctx: 2048  # Context window size
+  n_threads: 8  # Number of CPU threads to use
+  max_tokens: 2000  # Maximum tokens to generate
+  temperature: 0.7  # Sampling temperature
+  top_p: 0.9  # Top-p sampling parameter
+
 # Intent Recognition settings
 intent:
   model_path: null  # Path to intent recognition model (if any)
@@ -33,9 +42,9 @@ context:
 
 # Gating Classifiers settings
 gating_classifiers:
-  actionable_model_path: "./src/gating_classifiers/models/mobilebert-finetuned-actionable"  # Path to actionable classifier model
+  actionable_model_path: "./models/mobilebert-finetuned-actionable"  # Path to actionable classifier model
   actionable_threshold: 0.5  # Confidence threshold for actionable classification
-  contextable_model_path: "./src/gating_classifiers/models/mobilebert-finetuned-contextable"  # Path to contextable classifier model
+  contextable_model_path: "./models/mobilebert-finetuned-contextable"  # Path to contextable classifier model
   contextable_threshold: 0.5  # Confidence threshold for contextable classification
 
 # Task Execution settings

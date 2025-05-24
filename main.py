@@ -16,6 +16,7 @@ from src.sentiment import SentimentAnalyzer
 from src.context import ContextManager
 from src.executor import TaskExecutor
 from src.gating_classifiers import ActionableClassifier, ContextableClassifier
+from src.llm.qwen_llm import QwenLLM
 
 # --- Constants ---
 DEFAULT_CONFIG_PATH = "configs/config.yaml"
@@ -58,6 +59,14 @@ class VoiceAssistant:
             threshold=self.config.get("vad", {}).get("threshold", 0.5)
         )
         
+        self.console.print("[bold cyan]Initializing LLM module...[/bold cyan]")
+        llm_config = self.config.get("llm", {})
+        self.llm = QwenLLM(
+            model_path=llm_config.get("model_path", "models/Qwen3-1.7B-Q4_0.gguf"),
+            n_ctx=llm_config.get("n_ctx", 2048),
+            n_threads=llm_config.get("n_threads", 8)
+        )
+        
         self.console.print("[bold cyan]Initializing Intent Recognition module...[/bold cyan]")
         self.intent_recognizer = IntentRecognizer(
             model_path=self.config.get("intent", {}).get("model_path")
@@ -97,6 +106,12 @@ class VoiceAssistant:
         self.last_response = ""
         self.last_actionable = None
         self.last_contextable = None
+        
+        # Timing information
+        self.voice_detection_time = 0
+        self.transcription_time = 0
+        self.llm_response_time = 0
+        self.total_processing_time = 0
     
     def _load_config(self, config_path):
         """
@@ -164,7 +179,7 @@ class VoiceAssistant:
         """
         status_text = "Listening for speech..." if not self.speech_active else "[bold green]Speech detected! Buffering...[/bold green]"
         if self.speech_active and time.time() - self.last_speech_time > 1.0:
-            status_text = "[bold yellow]Speech ended. Transcribing...[/bold yellow]"
+            status_text = "[bold yellow]Speech ended. Processing...[/bold yellow]"
             
         text = Text()
         text.append(f"Status: {status_text}\n", style="bold magenta")
@@ -191,6 +206,13 @@ class VoiceAssistant:
         text.append(f"Last response:\n", style="bold white")
         if self.last_response:
             text.append(f"{self.last_response}\n", style="green")
+            
+        # Add timing information
+        text.append("\nTiming Information:\n", style="bold white")
+        text.append(f"Voice Detection: {self.voice_detection_time:.2f}s\n", style="cyan")
+        text.append(f"Transcription: {self.transcription_time:.2f}s\n", style="cyan")
+        text.append(f"LLM Response: {self.llm_response_time:.2f}s\n", style="cyan")
+        text.append(f"Total Processing: {self.total_processing_time:.2f}s\n", style="cyan")
         
         return Panel(text, title="[bold blue]Voice Assistant[/bold blue]", border_style="blue")
     
@@ -204,7 +226,9 @@ class VoiceAssistant:
         audio_np = audio_chunk[:, 0]
         
         # Detect speech
+        vad_start = time.time()
         speech_timestamps = self.vad.detect_speech(audio_np)
+        self.voice_detection_time = time.time() - vad_start
         
         # Update speech state and buffer
         if speech_timestamps:
@@ -220,12 +244,15 @@ class VoiceAssistant:
         Process buffered speech audio
         """
         self.console.print("[bold yellow]Speech ended. Processing...[/bold yellow]")
+        start_time = time.time()
         
         # Combine buffered audio chunks
         full_audio = np.concatenate(self.buffered_audio)
         
         # Transcribe
+        transcribe_start = time.time()
         self.last_transcript = self.stt.transcribe(full_audio)
+        self.transcription_time = time.time() - transcribe_start
         self.console.print(f"[bold green]Transcription:[/bold green] {self.last_transcript}")
         
         if self.last_transcript.strip():
@@ -245,19 +272,21 @@ class VoiceAssistant:
             
             # Only process further if transcript is actionable
             if actionable_result["actionable"]:
-                # Recognize intent
-                intent_data = self.intent_recognizer.recognize_intent(self.last_transcript)
-                
-                # Analyze sentiment
-                sentiment_data = self.sentiment_analyzer.analyze_sentiment(self.last_transcript)
-                
-                # Execute task based on intent
-                result = self.task_executor.execute_task(intent_data, self.context_manager.get_context())
-                
-                # Update response
-                self.last_response = result.get("response", "I processed that, but I'm not sure how to respond.")
+                # Generate LLM response for actionable inputs
+                llm_start = time.time()
+                llm_config = self.config.get("llm", {})
+                llm_response, _ = self.llm.generate(
+                    self.last_transcript,
+                    max_tokens=llm_config.get("max_tokens", 2000),
+                    temperature=llm_config.get("temperature", 0.7),
+                    top_p=llm_config.get("top_p", 0.9)
+                )
+                self.llm_response_time = time.time() - llm_start
+                self.last_response = llm_response
             else:
-                self.last_response = "That doesn't seem like a command or request I can act on."
+                # For non-actionable inputs, just acknowledge
+                self.last_response = "I heard you, but I'm not sure what action to take."
+                self.llm_response_time = 0  # Reset LLM time since we didn't use it
             
             # Update context only if the input is contextable
             if contextable_result["contextable"]:
@@ -272,6 +301,9 @@ class VoiceAssistant:
                 self.console.print("[bold magenta]Not adding to context memory[/bold magenta]")
             
             self.console.print(f"[bold green]Response:[/bold green] {self.last_response}")
+        
+        # Update total processing time
+        self.total_processing_time = time.time() - start_time
         
         # Reset state
         self.buffered_audio = []
