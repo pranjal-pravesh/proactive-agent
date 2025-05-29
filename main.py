@@ -11,10 +11,6 @@ from rich.text import Text
 
 from src.stt import SpeechToText
 from src.vad import VoiceActivityDetector
-from src.intent import IntentRecognizer
-from src.sentiment import SentimentAnalyzer
-from src.context import ContextManager
-from src.executor import TaskExecutor
 from src.gating_classifiers import ActionableClassifier, ContextableClassifier
 from src.llm.qwen_llm import QwenLLM
 from src.rag.memory_store import add_to_knowledge_base, retrieve_context
@@ -67,24 +63,6 @@ class VoiceAssistant:
             n_ctx=llm_config.get("n_ctx", 2048),
             n_threads=llm_config.get("n_threads", 8)
         )
-        
-        self.console.print("[bold cyan]Initializing Intent Recognition module...[/bold cyan]")
-        self.intent_recognizer = IntentRecognizer(
-            model_path=self.config.get("intent", {}).get("model_path")
-        )
-        
-        self.console.print("[bold cyan]Initializing Sentiment Analysis module...[/bold cyan]")
-        self.sentiment_analyzer = SentimentAnalyzer(
-            model_path=self.config.get("sentiment", {}).get("model_path")
-        )
-        
-        self.console.print("[bold cyan]Initializing Context Manager...[/bold cyan]")
-        self.context_manager = ContextManager(
-            max_history=self.config.get("context", {}).get("max_history", 10)
-        )
-        
-        self.console.print("[bold cyan]Initializing Task Executor...[/bold cyan]")
-        self.task_executor = TaskExecutor()
         
         self.console.print("[bold cyan]Initializing Actionable Classifier...[/bold cyan]")
         self.actionable_classifier = ActionableClassifier(
@@ -308,12 +286,6 @@ Question:
             if contextable_result["contextable"]:
                 # Add to knowledge base (RAG memory)
                 add_to_knowledge_base(self.last_transcript, {"timestamp": time.time()})
-                self.context_manager.add_to_history(
-                    self.last_transcript, 
-                    self.last_response,
-                    actionable_result.get("prediction", "Unknown"),
-                    {}  # We can pass the intent and sentiment later if needed
-                )
                 self.console.print("[bold magenta]Added to context memory[/bold magenta]")
             else:
                 self.console.print("[bold magenta]Not adding to context memory[/bold magenta]")
