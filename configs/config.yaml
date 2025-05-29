@@ -14,7 +14,7 @@ stt:
 
 # Voice Activity Detection settings
 vad:
-  threshold: 0.5  # Voice detection threshold (0.0 to 1.0)
+  threshold: 0.7  # Voice detection threshold (0.0 to 1.0)
   min_speech_duration_ms: 150  # Minimum speech duration in milliseconds
   speech_pad_ms: 400  # Additional padding around speech in milliseconds
 
@@ -36,23 +36,15 @@ intent:
 sentiment:
   model_path: null  # Path to sentiment analysis model (if any)
 
-# Context Management settings
-context:
-  max_history: 10  # Maximum conversation turns to keep in history
+# Conversation Memory settings
+conversation_memory:
+  max_turns: 10  # Maximum number of conversation turns to remember (0 to disable)
+  include_in_prompt: true  # Whether to include conversation history in LLM prompts
 
 # Gating Classifiers settings
 gating_classifiers:
   actionable_model_path: "./models/mobilebert-finetuned-actionable"  # Path to actionable classifier model
   actionable_threshold: 0.5  # Confidence threshold for actionable classification
   contextable_model_path: "./models/mobilebert-finetuned-contextable"  # Path to contextable classifier model
-  contextable_threshold: 0.5  # Confidence threshold for contextable classification
+  contextable_threshold: 0.6  # Confidence threshold for contextable classification
 
-# Task Execution settings
-executor:
-  default_tasks:
-    - greeting
-    - farewell
-    - help
-    - weather
-    - time
-    - reminder 

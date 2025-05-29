@@ -15,6 +15,45 @@ from src.gating_classifiers import ActionableClassifier, ContextableClassifier
 from src.llm.qwen_llm import QwenLLM
 from src.rag.memory_store import add_to_knowledge_base, retrieve_context
 
+# --- Conversation Memory Class ---
+class ConversationMemory:
+    """Simple conversation memory to track recent chat history"""
+    
+    def __init__(self, max_turns=5):
+        self.max_turns = max_turns
+        self.turns = []  # List of {"user": str, "assistant": str} dicts
+    
+    def add_turn(self, user_message, assistant_response):
+        """Add a conversation turn"""
+        if self.max_turns > 0:
+            self.turns.append({
+                "user": user_message,
+                "assistant": assistant_response
+            })
+            # Keep only the last max_turns
+            if len(self.turns) > self.max_turns:
+                self.turns.pop(0)
+    
+    def get_history_string(self):
+        """Get conversation history as a formatted string"""
+        if not self.turns:
+            return ""
+        
+        history_lines = []
+        for turn in self.turns:
+            history_lines.append(f"User: {turn['user']}")
+            history_lines.append(f"Assistant: {turn['assistant']}")
+        
+        return "\n".join(history_lines)
+    
+    def clear(self):
+        """Clear conversation memory"""
+        self.turns = []
+    
+    def get_turn_count(self):
+        """Get number of stored turns"""
+        return len(self.turns)
+
 # --- Constants ---
 DEFAULT_CONFIG_PATH = "configs/config.yaml"
 DEFAULT_SAMPLE_RATE = 16000
@@ -91,6 +130,12 @@ class VoiceAssistant:
         self.transcription_time = 0
         self.llm_response_time = 0
         self.total_processing_time = 0
+        
+        # Initialize conversation memory
+        conv_memory_config = self.config.get("conversation_memory", {})
+        max_turns = conv_memory_config.get("max_turns", 5)
+        self.conversation_memory = ConversationMemory(max_turns=max_turns)
+        self.include_history_in_prompt = conv_memory_config.get("include_in_prompt", True)
     
     def _load_config(self, config_path):
         """
@@ -186,6 +231,9 @@ class VoiceAssistant:
         if self.last_response:
             text.append(f"{self.last_response}\n", style="green")
             
+        # Add conversation memory info
+        text.append(f"Conversation Memory: {self.conversation_memory.get_turn_count()}/{self.conversation_memory.max_turns} turns\n", style="magenta")
+            
         # Add timing information
         text.append("\nTiming Information:\n", style="bold white")
         text.append(f"Voice Detection: {self.voice_detection_time:.2f}s\n", style="cyan")
@@ -235,6 +283,16 @@ class VoiceAssistant:
         self.console.print(f"[bold green]Transcription:[/bold green] {self.last_transcript}")
         
         if self.last_transcript.strip():
+            # Check for memory reset command
+            if self.last_transcript.strip().lower() == "reset memory":
+                self.conversation_memory.clear()
+                self.console.print("[bold magenta]Conversation memory reset![/bold magenta]")
+                self.last_response = "Conversation memory has been reset."
+                self.total_processing_time = time.time() - start_time
+                self.buffered_audio = []
+                self.speech_active = False
+                return
+            
             # Classify if actionable
             actionable_result = self.actionable_classifier.is_actionable(self.last_transcript)
             self.last_actionable = actionable_result
@@ -254,33 +312,40 @@ class VoiceAssistant:
                 # Retrieve relevant contextable memory
                 contexts = retrieve_context(self.last_transcript, k=5)
                 context_block = "\n".join(f"- {ctx}" for ctx in contexts)
-                prompt = f"""
-<|im_start|>system
-You are a concise assistant. Use the context if it's helpful. No unnecessary explanation.
-<|im_end|>
-<|im_start|>user
-Context:
-{context_block}
-
-Question:
-{self.last_transcript}
-<|im_end|>
-<|im_start|>assistant
-"""
+                
+                # Build conversation history block
+                history_block = ""
+                if self.include_history_in_prompt:
+                    history_str = self.conversation_memory.get_history_string()
+                    if history_str:
+                        history_block = f"\nConversation History:\n{history_str}\n"
+                
+                # Build user input with context and history
+                user_input = f"""Context:
+                                {context_block}
+                                {history_block}
+                                Question:
+                                {self.last_transcript}"""
+                
                 llm_start = time.time()
-                llm_config = self.config.get("llm", {})
                 llm_response, _ = self.llm.generate(
-                    prompt,
-                    max_tokens=llm_config.get("max_tokens", 2000),
-                    temperature=llm_config.get("temperature", 0.7),
-                    top_p=llm_config.get("top_p", 0.9)
+                    user_input,
+                    max_tokens=self.config.get("llm", {}).get("max_tokens", 2000),
+                    temperature=self.config.get("llm", {}).get("temperature", 0.7),
+                    top_p=self.config.get("llm", {}).get("top_p", 0.9)
                 )
                 self.llm_response_time = time.time() - llm_start
                 self.last_response = llm_response
+                
+                # Add this conversation turn to memory
+                self.conversation_memory.add_turn(self.last_transcript, self.last_response)
             else:
                 # For non-actionable inputs, just acknowledge
                 self.last_response = "I heard you, but I'm not sure what action to take."
                 self.llm_response_time = 0  # Reset LLM time since we didn't use it
+                
+                # Add this conversation turn to memory (even for non-actionable responses)
+                self.conversation_memory.add_turn(self.last_transcript, self.last_response)
             
             # Update context only if the input is contextable
             if contextable_result["contextable"]:
