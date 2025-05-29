@@ -17,6 +17,7 @@ from src.context import ContextManager
 from src.executor import TaskExecutor
 from src.gating_classifiers import ActionableClassifier, ContextableClassifier
 from src.llm.qwen_llm import QwenLLM
+from src.rag.memory_store import add_to_knowledge_base, retrieve_context
 
 # --- Constants ---
 DEFAULT_CONFIG_PATH = "configs/config.yaml"
@@ -272,11 +273,26 @@ class VoiceAssistant:
             
             # Only process further if transcript is actionable
             if actionable_result["actionable"]:
-                # Generate LLM response for actionable inputs
+                # Retrieve relevant contextable memory
+                contexts = retrieve_context(self.last_transcript, k=5)
+                context_block = "\n".join(f"- {ctx}" for ctx in contexts)
+                prompt = f"""
+<|im_start|>system
+You are a concise assistant. Use the context if it's helpful. No unnecessary explanation.
+<|im_end|>
+<|im_start|>user
+Context:
+{context_block}
+
+Question:
+{self.last_transcript}
+<|im_end|>
+<|im_start|>assistant
+"""
                 llm_start = time.time()
                 llm_config = self.config.get("llm", {})
                 llm_response, _ = self.llm.generate(
-                    self.last_transcript,
+                    prompt,
                     max_tokens=llm_config.get("max_tokens", 2000),
                     temperature=llm_config.get("temperature", 0.7),
                     top_p=llm_config.get("top_p", 0.9)
@@ -290,6 +306,8 @@ class VoiceAssistant:
             
             # Update context only if the input is contextable
             if contextable_result["contextable"]:
+                # Add to knowledge base (RAG memory)
+                add_to_knowledge_base(self.last_transcript, {"timestamp": time.time()})
                 self.context_manager.add_to_history(
                     self.last_transcript, 
                     self.last_response,
@@ -300,7 +318,7 @@ class VoiceAssistant:
             else:
                 self.console.print("[bold magenta]Not adding to context memory[/bold magenta]")
             
-            self.console.print(f"[bold green]Response:[/bold green] {self.last_response}")
+            # self.console.print(f"[bold green]Response:[/bold green] {self.last_response}")  # REMOVE response display
         
         # Update total processing time
         self.total_processing_time = time.time() - start_time
