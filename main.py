@@ -353,7 +353,13 @@ class VoiceAssistant:
                     processed_response = self.tool_manager.process_response_with_tools(llm_response)
                     
                     if processed_response["tool_used"]:
-                        self.console.print(f"[bold cyan]Tool Call Detected:[/bold cyan] {processed_response['tool_call']['tool_name']}")
+                        # Check if tool_call exists and has the expected structure
+                        tool_call = processed_response.get("tool_call", {})
+                        if "tool_name" in tool_call:
+                            self.console.print(f"[bold cyan]Tool Call Detected:[/bold cyan] {tool_call['tool_name']}")
+                        else:
+                            self.console.print(f"[bold cyan]Tool Call Detected[/bold cyan] (parsing failed)")
+                        
                         # Format the response with tool result
                         response_text = processed_response["content"]
                         tool_result_text = self.tool_manager.format_tool_result_for_user(processed_response["tool_result"])

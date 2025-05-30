@@ -13,13 +13,13 @@ class Calculator:
         """Get tool information for LLM"""
         return {
             "name": "calculator",
-            "description": "Perform mathematical calculations including basic arithmetic, advanced functions, symbolic math, calculus, factorials, combinations, permutations, and complex expressions. Supports natural mathematical expressions like '7! / (2! * 3!)', 'sin(pi/2)', 'integrate(x^2, x)', etc.",
+            "description": "Perform mathematical calculations using mathematical expressions and formulas. IMPORTANT: Only use mathematical notation, NOT natural language descriptions. Examples: '2*pi*r' not 'perimeter of circle', 'pi*r^2' not 'area of circle', '7!' not 'factorial of 7'.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "expression": {
                         "type": "string",
-                        "description": "Mathematical expression to evaluate. Examples: '7! / (2! * 3!)', 'sqrt(144)', 'sin(pi/2)', '2^10', 'log(100)', 'integrate(x^2, x)', 'derivative(x^3, x)', 'solve(x^2 - 4, x)', 'factor(x^2 - 1)', etc."
+                        "description": "Mathematical expression using proper mathematical notation. Use: +, -, *, /, ^, sqrt(), sin(), cos(), tan(), log(), pi, e, factorial(). Examples: '2*pi*7' (perimeter), 'pi*7^2' (area), '7!/2!' (factorial division), 'sqrt(144)', 'sin(pi/2)', etc. DO NOT use natural language like 'perimeter of circle' - use the actual formula like '2*pi*r'."
                     },
                     "mode": {
                         "type": "string",
@@ -101,7 +101,11 @@ class Calculator:
                 try:
                     parsed_expr = sp.sympify(preprocessed_expr)
                 except Exception as e2:
-                    return {"error": f"Could not parse expression '{expression}': {str(e2)}"}
+                    error_msg = str(e2).lower()
+                    if any(word in error_msg for word in ['perimeter', 'area', 'circumference', 'volume']):
+                        return {"error": f"Please use mathematical formulas instead of natural language. For example: 'perimeter of circle' → '2*pi*r', 'area of circle' → 'pi*r^2', 'area of rectangle' → 'length*width'"}
+                    else:
+                        return {"error": f"Could not parse expression '{expression}': {str(e2)}. Please use mathematical notation like '2*pi*5' instead of 'perimeter of circle with radius 5'."}
             
             # Handle different modes
             if mode == "evaluate":

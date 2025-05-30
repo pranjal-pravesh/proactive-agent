@@ -85,16 +85,28 @@ IMPORTANT TOOL CALLING RULES:
 5. If a tool call fails, explain the error and suggest alternatives
 
 Examples:
-- "What's 15 + 27?" -> Use calculator tool
+- "What's 15 + 27?" -> Use calculator tool with expression "15 + 27"
+- "What's the perimeter of a circle with radius 5?" -> Use calculator tool with expression "2*pi*5"
+- "What's the area of a circle with radius 3?" -> Use calculator tool with expression "pi*3^2"
+- "What's 7 factorial?" -> Use calculator tool with expression "7!" or "factorial(7)"
 - "What's the weather like?" -> Use weather_checker tool
 - "Schedule a meeting tomorrow" -> Use calendar_scheduler tool
 - "How are you today?" -> Respond normally, no tool needed
+
+CALCULATOR TOOL SPECIFIC RULES:
+- Always convert geometry problems to mathematical formulas
+- Circle perimeter: 2*pi*r, Circle area: pi*r^2
+- Rectangle area: length*width, Rectangle perimeter: 2*(length+width)
+- Triangle area: 0.5*base*height
+- Use mathematical notation, NOT natural language descriptions
+- For questions asking for multiple values (like "perimeter AND area"), make separate calculations or explain both separately
+- Don't add quantities with different units (e.g., don't add perimeter + area)
 """
         
         return prompt
     
     def parse_tool_call(self, response: str) -> Optional[Dict[str, Any]]:
-        """Parse tool call from LLM response"""
+        """Parse tool call from LLM response - handles only the first tool call if multiple exist"""
         # Look for tool call pattern - handle various formats
         patterns = [
             # Complete tool call
@@ -102,7 +114,7 @@ Examples:
             # Incomplete tool call (missing closing tag)
             r'<tool_call>\s*(\{.*?\})\s*(?:\n|$)',
             # Even more flexible - just look for JSON after <tool_call>
-            r'<tool_call>\s*(\{[^<]*\})',
+            r'<tool_call>\s*(\{[^<]*?\})',
         ]
         
         tool_call_json = None
@@ -117,19 +129,33 @@ Examples:
             print(f"[DEBUG] No tool call pattern found in response: {repr(response[:200])}")
             return None
         
-        try:
-            tool_call = json.loads(tool_call_json)
-            
-            # Validate tool call structure
-            if "tool_name" not in tool_call or "parameters" not in tool_call:
-                return {"error": "Invalid tool call format. Must include 'tool_name' and 'parameters'"}
-            
-            print(f"[DEBUG] Parsed tool call: {tool_call}")
-            return tool_call
-        except json.JSONDecodeError as e:
-            print(f"[DEBUG] JSON decode error: {e}")
-            print(f"[DEBUG] Problematic JSON: {repr(tool_call_json)}")
-            return {"error": f"Invalid JSON in tool call: {str(e)}"}
+        # Handle case where multiple tool calls might be concatenated
+        # Split on common delimiters and take the first valid JSON
+        possible_jsons = [
+            tool_call_json,
+            tool_call_json.split(' 和 ')[0],  # Handle Chinese "and" 
+            tool_call_json.split(' and ')[0],  # Handle English "and"
+            tool_call_json.split('\n')[0],     # Handle newline separation
+        ]
+        
+        for json_candidate in possible_jsons:
+            json_candidate = json_candidate.strip()
+            if json_candidate.startswith('{') and json_candidate.endswith('}'):
+                try:
+                    tool_call = json.loads(json_candidate)
+                    
+                    # Validate tool call structure
+                    if "tool_name" not in tool_call or "parameters" not in tool_call:
+                        continue
+                    
+                    print(f"[DEBUG] Successfully parsed tool call: {tool_call}")
+                    return tool_call
+                except json.JSONDecodeError as e:
+                    print(f"[DEBUG] JSON decode error for candidate '{json_candidate[:50]}...': {e}")
+                    continue
+        
+        print(f"[DEBUG] All JSON parsing attempts failed")
+        return {"error": "Could not parse any valid tool call JSON"}
     
     def execute_tool_call(self, tool_call: Dict[str, Any]) -> Dict[str, Any]:
         """Execute a tool call and return results"""
@@ -175,6 +201,8 @@ Examples:
     
     def process_response_with_tools(self, llm_response: str) -> Dict[str, Any]:
         """Process LLM response, execute any tool calls, and return formatted result"""
+        print(f"[DEBUG] Processing LLM response for tool calls")
+        
         # Check if response contains tool call
         tool_call = self.parse_tool_call(llm_response)
         
@@ -189,8 +217,23 @@ Examples:
         # Execute tool call
         tool_result = self.execute_tool_call(tool_call)
         
-        # Remove tool call from response text
-        cleaned_response = re.sub(r'<tool_call>.*?</tool_call>', '', llm_response, flags=re.DOTALL).strip()
+        # Remove ALL tool call patterns from response text to make it speech-ready
+        cleaned_response = llm_response
+        
+        # Remove complete tool calls
+        cleaned_response = re.sub(r'<tool_call>.*?</tool_call>', '', cleaned_response, flags=re.DOTALL)
+        
+        # Remove incomplete tool calls
+        cleaned_response = re.sub(r'<tool_call>\s*\{[^<]*?\}\s*(?:\n|$)', '', cleaned_response, flags=re.DOTALL)
+        
+        # Remove any remaining <tool_call> tags
+        cleaned_response = re.sub(r'</?tool_call[^>]*>', '', cleaned_response)
+        
+        # Clean up extra whitespace and newlines
+        cleaned_response = re.sub(r'\n\s*\n', '\n', cleaned_response)
+        cleaned_response = cleaned_response.strip()
+        
+        print(f"[DEBUG] Cleaned response: '{cleaned_response}'")
         
         return {
             "type": "tool_response",

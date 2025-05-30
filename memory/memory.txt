@@ -27,3 +27,4 @@
 [2025-05-30 19:42:19] Okay, now the issue is solved
 [2025-05-30 19:43:45] what is 7 factorial divided by 2 factorial is factorial.
 [2025-05-30 19:45:43] Now you are going to do a lot of calculations.
+[2025-05-30 20:03:08] If a car is moving at the speed of 100 km per hour, how can I calculate speed in meter per second?
