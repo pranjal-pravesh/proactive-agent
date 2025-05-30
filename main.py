@@ -20,9 +20,52 @@ from src.tool_calls import ToolManager
 class ConversationMemory:
     """Simple conversation memory to track recent chat history"""
     
-    def __init__(self, max_turns=5):
+    def __init__(self, max_turns=5, log_file="memory/chat_history.txt"):
         self.max_turns = max_turns
         self.turns = []  # List of {"user": str, "assistant": str} dicts
+        self.log_file = log_file
+        
+        # Initialize log file with header
+        self._write_log_header()
+    
+    def _write_log_header(self):
+        """Write header to the log file"""
+        import os
+        from datetime import datetime
+        
+        # Create memory directory if it doesn't exist
+        os.makedirs(os.path.dirname(self.log_file), exist_ok=True)
+        
+        with open(self.log_file, 'w', encoding='utf-8') as f:
+            f.write("=" * 60 + "\n")
+            f.write("VOICE ASSISTANT CHAT HISTORY LOG\n")
+            f.write(f"Session started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write("=" * 60 + "\n\n")
+    
+    def _update_log_file(self):
+        """Update the entire log file with current conversation history"""
+        from datetime import datetime
+        
+        try:
+            with open(self.log_file, 'a', encoding='utf-8') as f:
+                f.write(f"\n[{datetime.now().strftime('%H:%M:%S')}] CONVERSATION MEMORY UPDATE\n")
+                f.write(f"Total turns stored: {len(self.turns)}/{self.max_turns}\n")
+                f.write("-" * 40 + "\n")
+                
+                if not self.turns:
+                    f.write("(No conversation history yet)\n")
+                else:
+                    for i, turn in enumerate(self.turns, 1):
+                        f.write(f"Turn {i}:\n")
+                        f.write(f"  User: {turn['user']}\n")
+                        f.write(f"  Assistant: {turn['assistant']}\n")
+                        f.write("\n")
+                
+                f.write("-" * 40 + "\n")
+                f.write("END OF MEMORY UPDATE\n\n")
+                f.flush()  # Force write to disk immediately
+        except Exception as e:
+            print(f"Warning: Could not update chat history log: {e}")
     
     def add_turn(self, user_message, assistant_response):
         """Add a conversation turn"""
@@ -34,6 +77,9 @@ class ConversationMemory:
             # Keep only the last max_turns
             if len(self.turns) > self.max_turns:
                 self.turns.pop(0)
+            
+            # Log the update to file
+            self._update_log_file()
     
     def get_history_string(self):
         """Get conversation history as a formatted string"""
@@ -50,6 +96,15 @@ class ConversationMemory:
     def clear(self):
         """Clear conversation memory"""
         self.turns = []
+        # Log the memory clear
+        from datetime import datetime
+        try:
+            with open(self.log_file, 'a', encoding='utf-8') as f:
+                f.write(f"\n[{datetime.now().strftime('%H:%M:%S')}] MEMORY CLEARED\n")
+                f.write("All conversation history has been reset.\n\n")
+                f.flush()
+        except Exception as e:
+            print(f"Warning: Could not log memory clear: {e}")
     
     def get_turn_count(self):
         """Get number of stored turns"""
@@ -298,6 +353,13 @@ class VoiceAssistant:
                 self.buffered_audio = []
                 self.speech_active = False
                 return
+            
+            # Auto-reset if we detect repetitive refusal patterns
+            if len(self.conversation_memory.turns) >= 2:
+                recent_responses = [turn["assistant"] for turn in self.conversation_memory.turns[-2:]]
+                if all("I'm sorry, but I can't provide information" in response for response in recent_responses):
+                    self.console.print("[bold yellow]Detected repetitive refusals - clearing memory to reset context[/bold yellow]")
+                    self.conversation_memory.clear()
             
             # Classify if actionable
             actionable_result = self.actionable_classifier.is_actionable(self.last_transcript)

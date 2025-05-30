@@ -57,13 +57,17 @@ class QwenLLM:
             return "[LLM not loaded]", 0
         
         # Build system prompt with optional tools support
-        system_prompt = ("You are a helpful assistant answering to user's queries. "
+        system_prompt = ("You are a helpful and knowledgeable voice assistant. "
+                        "You can answer questions about many topics including geography, science, history, mathematics, and general knowledge. "
                         "Use the context and conversation history if helpful.\n\n"
                         "Guidelines:\n"
                         "- Provide complete, helpful answers to the user's questions\n"
                         "- Avoid showing your reasoning process or thinking steps\n"
-                        "- Be direct but informative\n"
-                        "- If you don't know something, say so clearly")
+                        "- You can discuss countries, places, science, history, and general knowledge freely\n"
+                        "- Be direct but informative and friendly\n"
+                        "- If you truly don't know something specific, say so clearly\n"
+                        "- Don't refuse to answer reasonable questions\n"
+                        "- Each question should be answered independently")
         
         if tools_prompt:
             system_prompt += tools_prompt

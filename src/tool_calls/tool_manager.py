@@ -101,6 +101,11 @@ CALCULATOR TOOL SPECIFIC RULES:
 - Use mathematical notation, NOT natural language descriptions
 - For questions asking for multiple values (like "perimeter AND area"), make separate calculations or explain both separately
 - Don't add quantities with different units (e.g., don't add perimeter + area)
+- Use "evaluate" mode for calculating numerical results (most common)
+- Use "solve" mode only when you need to find variable values that make an equation equal to zero
+- Examples:
+  * "What's the radius if area is 200?" → use "evaluate" mode with "sqrt(200/pi)"
+  * "Find x where x^2 - 4 = 0" → use "solve" mode with "x^2 - 4"
 """
         
         return prompt
