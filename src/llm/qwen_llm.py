@@ -52,23 +52,32 @@ class QwenLLM:
         return text
 
 
-    def generate(self, user_input, max_tokens=2000, temperature=0.7, top_p=0.9):
+    def generate(self, user_input, max_tokens=2000, temperature=0.7, top_p=0.9, tools_prompt=""):
         if not self.llm:
-            return "[LLM not loaded]"
+            return "[LLM not loaded]", 0
+        
+        # Build system prompt with optional tools support
+        system_prompt = ("You are a helpful assistant answering to user's queries. "
+                        "Use the context and conversation history if helpful.\n\n"
+                        "Guidelines:\n"
+                        "- Provide complete, helpful answers to the user's questions\n"
+                        "- Avoid showing your reasoning process or thinking steps\n"
+                        "- Be direct but informative\n"
+                        "- If you don't know something, say so clearly")
+        
+        if tools_prompt:
+            system_prompt += tools_prompt
+        
         formatted_prompt = (
             "<|im_start|>system\n"
-            "You are a helpful assistant answering to user's queries. Use the context and conversation history if helpful.\n\n"
-            "Guidelines:\n"
-            "- Provide complete, helpful answers to the user's questions\n"
-            "- Avoid showing your reasoning process or thinking steps\n"
-            "- Be direct but informative\n"
-            "- If you don't know something, say so clearly\n\n"
+            f"{system_prompt}\n"
             "<|im_end|>\n"
             "<|im_start|>user\n"
             f"{user_input}\n"
             "<|im_end|>\n"
             "<|im_start|>assistant\n"
         )
+        
         start_time = time.time()
         output = self.llm(
             formatted_prompt,

@@ -14,6 +14,7 @@ from src.vad import VoiceActivityDetector
 from src.gating_classifiers import ActionableClassifier, ContextableClassifier
 from src.llm.qwen_llm import QwenLLM
 from src.rag.memory_store import add_to_knowledge_base, retrieve_context
+from src.tool_calls import ToolManager
 
 # --- Conversation Memory Class ---
 class ConversationMemory:
@@ -136,6 +137,11 @@ class VoiceAssistant:
         max_turns = conv_memory_config.get("max_turns", 5)
         self.conversation_memory = ConversationMemory(max_turns=max_turns)
         self.include_history_in_prompt = conv_memory_config.get("include_in_prompt", True)
+        
+        # Initialize tool manager
+        self.console.print("[bold cyan]Initializing Tool Manager...[/bold cyan]")
+        self.tool_manager = ToolManager()
+        self.tools_enabled = True  # Could be made configurable
     
     def _load_config(self, config_path):
         """
@@ -328,14 +334,37 @@ class VoiceAssistant:
                                 {self.last_transcript}"""
                 
                 llm_start = time.time()
+                # Get tools prompt if tools are enabled
+                tools_prompt = ""
+                if self.tools_enabled:
+                    tools_prompt = self.tool_manager.get_tools_prompt()
+                
                 llm_response, _ = self.llm.generate(
                     user_input,
                     max_tokens=self.config.get("llm", {}).get("max_tokens", 2000),
                     temperature=self.config.get("llm", {}).get("temperature", 0.7),
-                    top_p=self.config.get("llm", {}).get("top_p", 0.9)
+                    top_p=self.config.get("llm", {}).get("top_p", 0.9),
+                    tools_prompt=tools_prompt
                 )
                 self.llm_response_time = time.time() - llm_start
-                self.last_response = llm_response
+                
+                # Process response for tool calls
+                if self.tools_enabled:
+                    processed_response = self.tool_manager.process_response_with_tools(llm_response)
+                    
+                    if processed_response["tool_used"]:
+                        # Format the response with tool result
+                        response_text = processed_response["content"]
+                        tool_result_text = self.tool_manager.format_tool_result_for_user(processed_response["tool_result"])
+                        
+                        if response_text:
+                            self.last_response = f"{response_text}\n\n{tool_result_text}"
+                        else:
+                            self.last_response = tool_result_text
+                    else:
+                        self.last_response = processed_response["content"]
+                else:
+                    self.last_response = llm_response
                 
                 # Add this conversation turn to memory
                 self.conversation_memory.add_turn(self.last_transcript, self.last_response)

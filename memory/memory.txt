@@ -15,3 +15,12 @@
 [2025-05-29 23:01:35] Excuse me, I'm going to mute them all out.
 [2025-05-29 23:04:41] So, I want to move back to you.
 [2025-05-29 23:04:53] I almost do you normal.
+[2025-05-30 16:06:40] I don't know whether it's in the hotel or in the weather or anything like that.
+[2025-05-30 16:07:51] the wash detection is taking 0.01 second, the transfection is taking 1.5 second and the  lambda response is taking 4.60 second. So the total processing time will be over.
+[2025-05-30 16:08:20] If the worst detection takes 0 to 2 seconds, transcription takes 2.12 seconds and LLM response  takes 0 seconds, it will be the total processing.
+[2025-05-30 16:08:43] what was my last message that I sent to you.
+[2025-05-30 17:47:54] So you are able to understand what I spoke earlier, because you know my chat history.
+[2025-05-30 17:51:30] But you can still say anything like anything you want. I want to just know what are your viewpoints?
+[2025-05-30 17:51:54] So what was my question again, I forgot.
+[2025-05-30 17:52:37] I meant one
+[2025-05-30 17:52:53] I meant one more M-O-L-E
