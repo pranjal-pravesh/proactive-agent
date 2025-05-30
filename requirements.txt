@@ -12,3 +12,4 @@ spacy>=3.3.0
 llama-cpp-python>=0.2.0
 faiss-cpu>=1.7.4
 sentence-transformers>=2.2.2
+sympy>=1.12

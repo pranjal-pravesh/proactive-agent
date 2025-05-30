@@ -353,6 +353,7 @@ class VoiceAssistant:
                     processed_response = self.tool_manager.process_response_with_tools(llm_response)
                     
                     if processed_response["tool_used"]:
+                        self.console.print(f"[bold cyan]Tool Call Detected:[/bold cyan] {processed_response['tool_call']['tool_name']}")
                         # Format the response with tool result
                         response_text = processed_response["content"]
                         tool_result_text = self.tool_manager.format_tool_result_for_user(processed_response["tool_result"])
@@ -384,7 +385,7 @@ class VoiceAssistant:
             else:
                 self.console.print("[bold magenta]Not adding to context memory[/bold magenta]")
             
-            # self.console.print(f"[bold green]Response:[/bold green] {self.last_response}")  # REMOVE response display
+            self.console.print(f"[bold green]Response:[/bold green] {self.last_response}")  # Show response display
         
         # Update total processing time
         self.total_processing_time = time.time() - start_time

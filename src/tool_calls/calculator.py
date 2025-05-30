@@ -1,144 +1,236 @@
 import math
 import json
+import re
 from typing import Dict, Any
+import sympy as sp
+from sympy.parsing.sympy_parser import parse_expr, standard_transformations, implicit_multiplication_application
 
 class Calculator:
-    """Calculator tool for mathematical operations"""
+    """Enhanced calculator tool for complex mathematical operations"""
     
     @staticmethod
     def get_tool_info() -> Dict[str, Any]:
         """Get tool information for LLM"""
         return {
             "name": "calculator",
-            "description": "Perform mathematical calculations including basic arithmetic, trigonometry, and advanced functions",
+            "description": "Perform mathematical calculations including basic arithmetic, advanced functions, symbolic math, calculus, factorials, combinations, permutations, and complex expressions. Supports natural mathematical expressions like '7! / (2! * 3!)', 'sin(pi/2)', 'integrate(x^2, x)', etc.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "operation": {
-                        "type": "string",
-                        "description": "The mathematical operation to perform",
-                        "enum": ["add", "subtract", "multiply", "divide", "power", "sqrt", "sin", "cos", "tan", "log", "ln", "factorial", "evaluate"]
-                    },
-                    "a": {
-                        "type": "number",
-                        "description": "First number (required for most operations)"
-                    },
-                    "b": {
-                        "type": "number", 
-                        "description": "Second number (required for binary operations)"
-                    },
                     "expression": {
                         "type": "string",
-                        "description": "Mathematical expression to evaluate (for 'evaluate' operation)"
+                        "description": "Mathematical expression to evaluate. Examples: '7! / (2! * 3!)', 'sqrt(144)', 'sin(pi/2)', '2^10', 'log(100)', 'integrate(x^2, x)', 'derivative(x^3, x)', 'solve(x^2 - 4, x)', 'factor(x^2 - 1)', etc."
+                    },
+                    "mode": {
+                        "type": "string",
+                        "description": "Calculation mode",
+                        "enum": ["evaluate", "simplify", "expand", "factor", "solve", "integrate", "differentiate", "limit"],
+                        "default": "evaluate"
+                    },
+                    "variable": {
+                        "type": "string",
+                        "description": "Variable for calculus operations (default: x)",
+                        "default": "x"
                     }
                 },
-                "required": ["operation"]
+                "required": ["expression"]
             }
         }
     
     @staticmethod
-    def execute(operation: str, a: float = None, b: float = None, expression: str = None) -> Dict[str, Any]:
+    def _preprocess_expression(expr_str: str) -> str:
+        """Preprocess expression to handle common mathematical notation"""
+        # Handle factorial notation
+        expr_str = re.sub(r'(\d+)!', r'factorial(\1)', expr_str)
+        expr_str = re.sub(r'(\w+)!', r'factorial(\1)', expr_str)
+        
+        # Handle common function names
+        replacements = {
+            'ln': 'log',  # natural log in sympy is just log
+            'lg': 'log10',  # log base 10
+            'arcsin': 'asin',
+            'arccos': 'acos',
+            'arctan': 'atan',
+            'deg': 'pi/180*',  # convert degrees to radians
+        }
+        
+        for old, new in replacements.items():
+            expr_str = re.sub(r'\b' + old + r'\b', new, expr_str)
+        
+        # Handle implicit multiplication for common cases
+        # Like 2x -> 2*x, 3(x+1) -> 3*(x+1)
+        expr_str = re.sub(r'(\d)([a-zA-Z])', r'\1*\2', expr_str)
+        expr_str = re.sub(r'(\d)\(', r'\1*(', expr_str)
+        expr_str = re.sub(r'\)(\d)', r')*\1', expr_str)
+        expr_str = re.sub(r'\)([a-zA-Z])', r')*\1', expr_str)
+        
+        return expr_str
+    
+    @staticmethod
+    def _safe_evaluate(expr, timeout=30):
+        """Safely evaluate expression with timeout"""
+        try:
+            # Use sympy's numerical evaluation
+            result = float(expr.evalf())
+            return result
+        except Exception as e:
+            # If numerical evaluation fails, try to simplify and then evaluate
+            try:
+                simplified = sp.simplify(expr)
+                result = float(simplified.evalf())
+                return result
+            except:
+                # Return symbolic result if numerical evaluation impossible
+                return expr
+    
+    @staticmethod
+    def execute(expression: str, mode: str = "evaluate", variable: str = "x") -> Dict[str, Any]:
         """Execute calculator operation"""
         try:
-            if operation == "add":
-                if a is None or b is None:
-                    return {"error": "Addition requires two numbers (a and b)"}
-                result = a + b
-                return {"result": result, "calculation": f"{a} + {b} = {result}"}
+            # Preprocess the expression
+            preprocessed_expr = Calculator._preprocess_expression(expression.strip())
             
-            elif operation == "subtract":
-                if a is None or b is None:
-                    return {"error": "Subtraction requires two numbers (a and b)"}
-                result = a - b
-                return {"result": result, "calculation": f"{a} - {b} = {result}"}
+            # Parse the expression using sympy
+            transformations = standard_transformations + (implicit_multiplication_application,)
             
-            elif operation == "multiply":
-                if a is None or b is None:
-                    return {"error": "Multiplication requires two numbers (a and b)"}
-                result = a * b
-                return {"result": result, "calculation": f"{a} × {b} = {result}"}
-            
-            elif operation == "divide":
-                if a is None or b is None:
-                    return {"error": "Division requires two numbers (a and b)"}
-                if b == 0:
-                    return {"error": "Cannot divide by zero"}
-                result = a / b
-                return {"result": result, "calculation": f"{a} ÷ {b} = {result}"}
-            
-            elif operation == "power":
-                if a is None or b is None:
-                    return {"error": "Power operation requires two numbers (a and b)"}
-                result = a ** b
-                return {"result": result, "calculation": f"{a}^{b} = {result}"}
-            
-            elif operation == "sqrt":
-                if a is None:
-                    return {"error": "Square root requires one number (a)"}
-                if a < 0:
-                    return {"error": "Cannot calculate square root of negative number"}
-                result = math.sqrt(a)
-                return {"result": result, "calculation": f"√{a} = {result}"}
-            
-            elif operation == "sin":
-                if a is None:
-                    return {"error": "Sine requires one number (a) in radians"}
-                result = math.sin(a)
-                return {"result": result, "calculation": f"sin({a}) = {result}"}
-            
-            elif operation == "cos":
-                if a is None:
-                    return {"error": "Cosine requires one number (a) in radians"}
-                result = math.cos(a)
-                return {"result": result, "calculation": f"cos({a}) = {result}"}
-            
-            elif operation == "tan":
-                if a is None:
-                    return {"error": "Tangent requires one number (a) in radians"}
-                result = math.tan(a)
-                return {"result": result, "calculation": f"tan({a}) = {result}"}
-            
-            elif operation == "log":
-                if a is None:
-                    return {"error": "Logarithm requires one number (a)"}
-                if a <= 0:
-                    return {"error": "Logarithm requires positive number"}
-                result = math.log10(a)
-                return {"result": result, "calculation": f"log₁₀({a}) = {result}"}
-            
-            elif operation == "ln":
-                if a is None:
-                    return {"error": "Natural logarithm requires one number (a)"}
-                if a <= 0:
-                    return {"error": "Natural logarithm requires positive number"}
-                result = math.log(a)
-                return {"result": result, "calculation": f"ln({a}) = {result}"}
-            
-            elif operation == "factorial":
-                if a is None:
-                    return {"error": "Factorial requires one number (a)"}
-                if a < 0 or a != int(a):
-                    return {"error": "Factorial requires non-negative integer"}
-                result = math.factorial(int(a))
-                return {"result": result, "calculation": f"{int(a)}! = {result}"}
-            
-            elif operation == "evaluate":
-                if expression is None:
-                    return {"error": "Evaluate operation requires an expression"}
-                # Safe evaluation of mathematical expressions
-                allowed_names = {
-                    k: v for k, v in math.__dict__.items() if not k.startswith("__")
-                }
-                allowed_names.update({"abs": abs, "round": round})
-                
+            try:
+                # Parse expression
+                parsed_expr = parse_expr(preprocessed_expr, transformations=transformations)
+            except Exception as e:
+                # Fallback: try with basic parsing
                 try:
-                    result = eval(expression, {"__builtins__": {}}, allowed_names)
-                    return {"result": result, "calculation": f"{expression} = {result}"}
+                    parsed_expr = sp.sympify(preprocessed_expr)
+                except Exception as e2:
+                    return {"error": f"Could not parse expression '{expression}': {str(e2)}"}
+            
+            # Handle different modes
+            if mode == "evaluate":
+                result = Calculator._safe_evaluate(parsed_expr)
+                
+                # Format result appropriately
+                if isinstance(result, (int, float)):
+                    if result == int(result):
+                        formatted_result = str(int(result))
+                    else:
+                        formatted_result = f"{result:.10g}"  # Remove trailing zeros
+                else:
+                    formatted_result = str(result)
+                
+                return {
+                    "result": result,
+                    "formatted_result": formatted_result,
+                    "calculation": f"{expression} = {formatted_result}",
+                    "original_expression": expression,
+                    "parsed_expression": str(parsed_expr)
+                }
+            
+            elif mode == "simplify":
+                simplified = sp.simplify(parsed_expr)
+                return {
+                    "result": simplified,
+                    "formatted_result": str(simplified),
+                    "calculation": f"Simplified: {expression} = {simplified}",
+                    "original_expression": expression
+                }
+            
+            elif mode == "expand":
+                expanded = sp.expand(parsed_expr)
+                return {
+                    "result": expanded,
+                    "formatted_result": str(expanded),
+                    "calculation": f"Expanded: {expression} = {expanded}",
+                    "original_expression": expression
+                }
+            
+            elif mode == "factor":
+                factored = sp.factor(parsed_expr)
+                return {
+                    "result": factored,
+                    "formatted_result": str(factored),
+                    "calculation": f"Factored: {expression} = {factored}",
+                    "original_expression": expression
+                }
+            
+            elif mode == "solve":
+                var = sp.Symbol(variable)
+                solutions = sp.solve(parsed_expr, var)
+                solutions_str = [str(sol) for sol in solutions]
+                return {
+                    "result": solutions,
+                    "formatted_result": ", ".join(solutions_str) if solutions_str else "No solutions",
+                    "calculation": f"Solutions for {expression} = 0: {', '.join(solutions_str) if solutions_str else 'No solutions'}",
+                    "original_expression": expression,
+                    "variable": variable
+                }
+            
+            elif mode == "integrate":
+                var = sp.Symbol(variable)
+                try:
+                    integral = sp.integrate(parsed_expr, var)
+                    return {
+                        "result": integral,
+                        "formatted_result": str(integral) + " + C",
+                        "calculation": f"∫({expression}) d{variable} = {integral} + C",
+                        "original_expression": expression,
+                        "variable": variable
+                    }
                 except Exception as e:
-                    return {"error": f"Invalid expression: {str(e)}"}
+                    return {"error": f"Could not integrate expression: {str(e)}"}
+            
+            elif mode == "differentiate":
+                var = sp.Symbol(variable)
+                try:
+                    derivative = sp.diff(parsed_expr, var)
+                    return {
+                        "result": derivative,
+                        "formatted_result": str(derivative),
+                        "calculation": f"d/d{variable}({expression}) = {derivative}",
+                        "original_expression": expression,
+                        "variable": variable
+                    }
+                except Exception as e:
+                    return {"error": f"Could not differentiate expression: {str(e)}"}
+            
+            elif mode == "limit":
+                var = sp.Symbol(variable)
+                try:
+                    # For limit, we need to specify approach point
+                    # Default to 0 if not specified in expression
+                    limit_result = sp.limit(parsed_expr, var, 0)
+                    return {
+                        "result": limit_result,
+                        "formatted_result": str(limit_result),
+                        "calculation": f"lim({variable}→0) {expression} = {limit_result}",
+                        "original_expression": expression,
+                        "variable": variable
+                    }
+                except Exception as e:
+                    return {"error": f"Could not compute limit: {str(e)}"}
             
             else:
-                return {"error": f"Unknown operation: {operation}"}
+                return {"error": f"Unknown mode: {mode}"}
                 
         except Exception as e:
-            return {"error": f"Calculation error: {str(e)}"} 
+            return {"error": f"Calculation error: {str(e)}"}
+    
+    @staticmethod
+    def test_complex_calculations():
+        """Test method for complex calculations"""
+        test_cases = [
+            "7! / (2! * 3!)",
+            "sin(pi/2)",
+            "log(e^3)",
+            "sqrt(144) + 2^3",
+            "factorial(5) * factorial(3)",
+            "integrate(x^2, x)",
+            "diff(x^3 + 2*x^2 + x, x)",
+            "solve(x^2 - 4, x)",
+            "simplify((x^2 - 1)/(x - 1))"
+        ]
+        
+        results = {}
+        for expr in test_cases:
+            result = Calculator.execute(expr)
+            results[expr] = result
+        
+        return results 

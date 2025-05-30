@@ -95,23 +95,40 @@ Examples:
     
     def parse_tool_call(self, response: str) -> Optional[Dict[str, Any]]:
         """Parse tool call from LLM response"""
-        # Look for tool call pattern
-        tool_call_pattern = r'<tool_call>\s*(\{[^}]+\})\s*</tool_call>'
-        match = re.search(tool_call_pattern, response, re.DOTALL)
+        # Look for tool call pattern - handle various formats
+        patterns = [
+            # Complete tool call
+            r'<tool_call>\s*(.*?)\s*</tool_call>',
+            # Incomplete tool call (missing closing tag)
+            r'<tool_call>\s*(\{.*?\})\s*(?:\n|$)',
+            # Even more flexible - just look for JSON after <tool_call>
+            r'<tool_call>\s*(\{[^<]*\})',
+        ]
         
-        if not match:
+        tool_call_json = None
+        for pattern in patterns:
+            match = re.search(pattern, response, re.DOTALL)
+            if match:
+                tool_call_json = match.group(1).strip()
+                print(f"[DEBUG] Found tool call JSON with pattern: {tool_call_json}")
+                break
+        
+        if not tool_call_json:
+            print(f"[DEBUG] No tool call pattern found in response: {repr(response[:200])}")
             return None
         
         try:
-            tool_call_json = match.group(1)
             tool_call = json.loads(tool_call_json)
             
             # Validate tool call structure
             if "tool_name" not in tool_call or "parameters" not in tool_call:
                 return {"error": "Invalid tool call format. Must include 'tool_name' and 'parameters'"}
             
+            print(f"[DEBUG] Parsed tool call: {tool_call}")
             return tool_call
         except json.JSONDecodeError as e:
+            print(f"[DEBUG] JSON decode error: {e}")
+            print(f"[DEBUG] Problematic JSON: {repr(tool_call_json)}")
             return {"error": f"Invalid JSON in tool call: {str(e)}"}
     
     def execute_tool_call(self, tool_call: Dict[str, Any]) -> Dict[str, Any]:
@@ -121,6 +138,8 @@ Examples:
         
         tool_name = tool_call.get("tool_name")
         parameters = tool_call.get("parameters", {})
+        
+        print(f"[DEBUG] Executing tool: {tool_name} with parameters: {parameters}")
         
         if tool_name not in self.tools:
             return {"error": f"Unknown tool: {tool_name}"}
@@ -136,6 +155,8 @@ Examples:
                 # Static method for other tools
                 result = tool.execute(**parameters)
             
+            print(f"[DEBUG] Tool execution result: {result}")
+            
             return {
                 "tool_name": tool_name,
                 "parameters": parameters,
@@ -144,6 +165,7 @@ Examples:
             }
             
         except Exception as e:
+            print(f"[DEBUG] Tool execution failed with exception: {e}")
             return {
                 "tool_name": tool_name,
                 "parameters": parameters,
@@ -188,9 +210,13 @@ Examples:
         
         if tool_name == "calculator":
             if "calculation" in result:
-                return f"🧮 {result['calculation']}"
+                return f"🧮 **{result['calculation']}**"
+            elif "formatted_result" in result:
+                return f"🧮 **Result: {result['formatted_result']}**"
             elif "result" in result:
-                return f"🧮 Result: {result['result']}"
+                return f"🧮 **Result: {result['result']}**"
+            else:
+                return f"🧮 **Calculation completed**"
         
         elif tool_name == "weather_checker":
             if "summary" in result:

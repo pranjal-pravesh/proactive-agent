@@ -24,3 +24,6 @@
 [2025-05-30 17:51:54] So what was my question again, I forgot.
 [2025-05-30 17:52:37] I meant one
 [2025-05-30 17:52:53] I meant one more M-O-L-E
+[2025-05-30 19:42:19] Okay, now the issue is solved
+[2025-05-30 19:43:45] what is 7 factorial divided by 2 factorial is factorial.
+[2025-05-30 19:45:43] Now you are going to do a lot of calculations.
