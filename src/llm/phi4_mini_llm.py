@@ -83,12 +83,17 @@ class Phi4MiniLLM:
         # Add weather tool
         tools_json.append({
             "name": "weather_checker",
-            "description": "Get weather information for a specific location",
+            "description": "Get current weather information for specified locations. Only use this when the user specifically asks about weather, temperature, or weather conditions.",
             "parameters": {
                 "location": {
-                    "description": "The location to get weather for",
+                    "description": "City name, region, or location (e.g., 'New York', 'London, UK', 'Tokyo, Japan', 'latitude,longitude')",
                     "type": "str",
                     "default": ""
+                },
+                "units": {
+                    "description": "Temperature units: 'm' for metric (Celsius), 'f' for Fahrenheit, 's' for scientific",
+                    "type": "str",
+                    "default": "m"
                 }
             }
         })

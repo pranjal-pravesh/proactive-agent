@@ -49,3 +49,9 @@ gating_classifiers:
   contextable_model_path: "./models/mobilebert-finetuned-contextable"  # Path to contextable classifier model
   contextable_threshold: 0.6  # Confidence threshold for contextable classification
 
+# Weatherstack API settings (NOT RECOMMENDED - Use .env file instead)
+weatherstack:
+  api_key: null  # Use .env file or environment variable instead for security
+  # Get your free API key at: https://weatherstack.com/signup
+  default_units: "m"  # Default temperature units: 'm' for Celsius, 'f' for Fahrenheit, 's' for scientific
+

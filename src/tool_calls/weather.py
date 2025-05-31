@@ -1,114 +1,179 @@
 import json
-import random
+import requests
 from typing import Dict, Any
 from datetime import datetime
+import os
+
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()  # Load .env file if it exists
+except ImportError:
+    pass  # python-dotenv not installed, skip loading
 
 class WeatherChecker:
-    """Weather checking tool (placeholder implementation)"""
+    """Weather checking tool using weatherstack API"""
+    
+    # Weatherstack API configuration
+    BASE_URL = "http://api.weatherstack.com"
+    HTTPS_URL = "https://api.weatherstack.com"  # For paid plans
     
     @staticmethod
     def get_tool_info() -> Dict[str, Any]:
         """Get tool information for LLM"""
         return {
             "name": "weather_checker",
-            "description": "Get current weather information and forecasts for specified locations",
+            "description": "Get current weather information for specified locations. Only use this when the user specifically asks about weather, temperature, or weather conditions.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "location": {
                         "type": "string",
-                        "description": "City name or location (e.g., 'New York', 'London', 'Tokyo')"
+                        "description": "City name, region, or location (e.g., 'New York', 'London, UK', 'Tokyo, Japan', 'latitude,longitude')"
                     },
-                    "action": {
+                    "units": {
                         "type": "string",
-                        "description": "Type of weather information to get",
-                        "enum": ["current", "forecast", "hourly"]
-                    },
-                    "days": {
-                        "type": "integer",
-                        "description": "Number of days for forecast (1-7, default: 3)",
-                        "minimum": 1,
-                        "maximum": 7
+                        "description": "Temperature units: 'm' for metric (Celsius), 'f' for Fahrenheit, 's' for scientific",
+                        "enum": ["m", "f", "s"],
+                        "default": "m"
                     }
                 },
-                "required": ["location", "action"]
+                "required": ["location"]
             }
         }
     
     @staticmethod
-    def execute(location: str, action: str = "current", days: int = 3) -> Dict[str, Any]:
-        """Execute weather checking operation (placeholder)"""
+    def _get_api_key():
+        """Get weatherstack API key from environment variable or config"""
+        # Try environment variable first
+        api_key = os.getenv('WEATHERSTACK_API_KEY')
+        if api_key:
+            return api_key
+        
+        # Try reading from config file
         try:
-            # Simulate API delay
-            import time
-            time.sleep(0.1)
-            
-            # Mock weather conditions
-            conditions = ["sunny", "cloudy", "rainy", "partly cloudy", "thunderstorm", "snow", "fog"]
-            temperatures = list(range(-10, 40))  # -10°C to 40°C
-            humidity_levels = list(range(20, 100))
-            wind_speeds = list(range(0, 30))
-            
-            if action == "current":
-                current_weather = {
-                    "location": location,
-                    "temperature": random.choice(temperatures),
-                    "condition": random.choice(conditions),
-                    "humidity": random.choice(humidity_levels),
-                    "wind_speed": random.choice(wind_speeds),
-                    "timestamp": datetime.now().isoformat(),
-                    "feels_like": random.choice(temperatures)
-                }
-                
+            import yaml
+            with open('configs/config.yaml', 'r') as f:
+                config = yaml.safe_load(f)
+                return config.get('weatherstack', {}).get('api_key')
+        except:
+            pass
+        
+        # Return None if no API key found
+        return None
+    
+    @staticmethod
+    def _handle_api_error(error_code: int, error_type: str, error_info: str) -> str:
+        """Handle weatherstack API errors with user-friendly messages"""
+        error_messages = {
+            101: "Weather service authentication failed. Please check API key configuration.",
+            104: "Monthly API request limit reached. Please upgrade the weather service plan.",
+            601: f"Invalid location '{error_info}'. Please provide a valid city name or coordinates.",
+            615: "Weather service request failed. Please try again later.",
+            404: "Weather data not found for the requested location.",
+            429: "Too many weather requests. Please wait a moment and try again.",
+            403: "Weather service feature not available on current plan."
+        }
+        
+        return error_messages.get(error_code, f"Weather service error: {error_info}")
+    
+    @staticmethod
+    def execute(location: str, units: str = "m") -> Dict[str, Any]:
+        """Execute weather checking operation using weatherstack API"""
+        try:
+            # Get API key
+            api_key = WeatherChecker._get_api_key()
+            if not api_key:
                 return {
-                    "action": "current",
-                    "data": current_weather,
-                    "summary": f"Current weather in {location}: {current_weather['temperature']}°C, {current_weather['condition']}, humidity {current_weather['humidity']}%, wind {current_weather['wind_speed']} km/h"
+                    "error": "Weather service not configured. Please run 'python setup_weather.py' to set up your API key, or set the WEATHERSTACK_API_KEY environment variable."
                 }
             
-            elif action == "forecast":
-                days = max(1, min(7, days))  # Ensure days is between 1 and 7
-                forecast_data = []
-                
-                for i in range(days):
-                    day_forecast = {
-                        "day": i + 1,
-                        "date": datetime.now().strftime("%Y-%m-%d"),
-                        "high_temp": random.choice(temperatures),
-                        "low_temp": random.choice([t for t in temperatures if t < 20]),
-                        "condition": random.choice(conditions),
-                        "precipitation_chance": random.randint(0, 100)
-                    }
-                    forecast_data.append(day_forecast)
-                
-                return {
-                    "action": "forecast",
-                    "location": location,
-                    "days": days,
-                    "data": forecast_data,
-                    "summary": f"{days}-day forecast for {location} ready"
-                }
+            # Prepare API request
+            url = f"{WeatherChecker.BASE_URL}/current"
+            params = {
+                "access_key": api_key,
+                "query": location,
+                "units": units
+            }
             
-            elif action == "hourly":
-                hourly_data = []
-                for hour in range(24):
-                    hour_forecast = {
-                        "hour": f"{hour:02d}:00",
-                        "temperature": random.choice(temperatures),
-                        "condition": random.choice(conditions),
-                        "precipitation_chance": random.randint(0, 100)
-                    }
-                    hourly_data.append(hour_forecast)
-                
-                return {
-                    "action": "hourly",
-                    "location": location,
-                    "data": hourly_data,
-                    "summary": f"24-hour forecast for {location} ready"
-                }
+            # Make API request with timeout
+            response = requests.get(url, params=params, timeout=10)
+            data = response.json()
             
-            else:
-                return {"error": f"Unknown weather action: {action}"}
-                
+            # Check for API errors
+            if not data.get("success", True) and "error" in data:
+                error = data["error"]
+                error_message = WeatherChecker._handle_api_error(
+                    error.get("code", 0),
+                    error.get("type", "unknown"),
+                    error.get("info", "Unknown error")
+                )
+                return {"error": error_message}
+            
+            # Check if we have valid weather data
+            if "current" not in data or "location" not in data:
+                return {"error": f"No weather data available for '{location}'. Please check the location name."}
+            
+            # Extract weather information
+            current = data["current"]
+            location_info = data["location"]
+            
+            # Determine temperature unit symbol
+            unit_symbol = {
+                "m": "°C",
+                "f": "°F", 
+                "s": "K"
+            }.get(units, "°C")
+            
+            # Format weather response
+            weather_data = {
+                "location": f"{location_info.get('name', location)}, {location_info.get('country', '')}".strip(", "),
+                "region": location_info.get("region", ""),
+                "temperature": current.get("temperature"),
+                "feels_like": current.get("feelslike"),
+                "condition": current.get("weather_descriptions", ["Unknown"])[0],
+                "humidity": current.get("humidity"),
+                "wind_speed": current.get("wind_speed"),
+                "wind_direction": current.get("wind_dir"),
+                "pressure": current.get("pressure"),
+                "visibility": current.get("visibility"),
+                "uv_index": current.get("uv_index"),
+                "local_time": location_info.get("localtime"),
+                "units": units,
+                "unit_symbol": unit_symbol
+            }
+            
+            # Create summary message
+            summary_parts = [
+                f"Weather in {weather_data['location']}:",
+                f"{weather_data['temperature']}{unit_symbol}",
+                f"{weather_data['condition']}"
+            ]
+            
+            if weather_data.get('feels_like') and weather_data['feels_like'] != weather_data['temperature']:
+                summary_parts.append(f"(feels like {weather_data['feels_like']}{unit_symbol})")
+            
+            if weather_data.get('humidity'):
+                summary_parts.append(f"Humidity: {weather_data['humidity']}%")
+            
+            if weather_data.get('wind_speed'):
+                wind_text = f"Wind: {weather_data['wind_speed']} km/h"
+                if weather_data.get('wind_direction'):
+                    wind_text += f" {weather_data['wind_direction']}"
+                summary_parts.append(wind_text)
+            
+            summary = ", ".join(summary_parts)
+            
+            return {
+                "location": weather_data['location'],
+                "data": weather_data,
+                "summary": summary,
+                "success": True
+            }
+            
+        except requests.RequestException as e:
+            return {"error": f"Weather service connection failed: {str(e)}"}
+        except json.JSONDecodeError:
+            return {"error": "Weather service returned invalid data. Please try again."}
         except Exception as e:
             return {"error": f"Weather service error: {str(e)}"} 

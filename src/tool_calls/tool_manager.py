@@ -87,6 +87,32 @@ IMPORTANT TOOL CALLING RULES:
 6. If a tool call fails, explain the error and suggest alternatives
 7. For calculator: PRESERVE mathematical units (degrees, radians, etc.) in expressions
 
+SPECIFIC TOOL USAGE GUIDELINES:
+
+CALCULATOR TOOL - Use ONLY for:
+- Mathematical calculations, equations, expressions
+- Arithmetic operations (+, -, *, /, ^, sqrt, etc.)
+- Trigonometric functions (sin, cos, tan with degrees/radians)
+- Scientific calculations (logarithms, factorials, etc.)
+- When user asks "calculate", "compute", "what's X + Y", etc.
+
+WEATHER TOOL - Use ONLY for:
+- Current weather conditions ("what's the weather", "temperature", "is it raining")
+- Weather-related questions ("how hot is it", "weather forecast", "current conditions")
+- Location-specific weather ("weather in London", "temperature in Tokyo")
+- DO NOT use for: general location questions, travel info, or non-weather topics
+
+CALENDAR TOOL - Use ONLY for:
+- Scheduling meetings or events ("schedule a meeting", "book appointment")
+- Calendar management ("list my events", "cancel meeting")
+- Time-based planning activities
+
+DO NOT USE TOOLS for:
+- General knowledge questions (history, geography, science facts)
+- Definitions or explanations
+- Casual conversation
+- Questions you can answer directly
+
 REQUIRED TOOL CALL FORMAT (DO NOT CHANGE):
 <tool_call>
 {
@@ -101,7 +127,9 @@ Examples:
 - "What's 15 + 27?" -> Use calculator tool
 - "What's the area of a circle with radius 5?" -> Use calculator tool  
 - "What's the weather like?" -> Use weather_checker tool
+- "Temperature in Paris" -> Use weather_checker tool
 - "Schedule a meeting tomorrow" -> Use calendar_scheduler tool
+- "What is the capital of France?" -> Respond normally, no tool needed
 - "How are you today?" -> Respond normally, no tool needed
 
 GENERAL TOOL GUIDELINES:
@@ -275,8 +303,14 @@ GENERAL TOOL GUIDELINES:
     
     def format_tool_result_for_user(self, tool_result: Dict[str, Any]) -> str:
         """Format tool execution result for user display"""
+        # Check if there's an error in the tool result
+        if "error" in tool_result.get("result", {}):
+            return f"❌ {tool_result['result']['error']}"
+        
+        # Check if the tool execution itself failed
         if not tool_result.get("success", False):
-            return f"❌ Tool Error: {tool_result.get('error', 'Unknown error')}"
+            error_msg = tool_result.get("error", "Unknown error")
+            return f"❌ Tool Error: {error_msg}"
         
         tool_name = tool_result.get("tool_name", "unknown")
         result = tool_result.get("result", {})

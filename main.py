@@ -9,6 +9,13 @@ from rich.live import Live
 from rich.panel import Panel
 from rich.text import Text
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()  # Load .env file if it exists
+except ImportError:
+    pass  # python-dotenv not installed, skip loading
+
 from src.stt import SpeechToText
 from src.vad import VoiceActivityDetector
 from src.gating_classifiers import ActionableClassifier, ContextableClassifier

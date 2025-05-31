@@ -1,288 +1,180 @@
 ============================================================
 VOICE ASSISTANT CHAT HISTORY LOG
-Session started: 2025-05-31 16:13:40
+Session started: 2025-05-31 17:11:38
 ============================================================
 
 
-[16:14:07] CONVERSATION MEMORY UPDATE
+[17:12:03] CONVERSATION MEMORY UPDATE
 Total turns stored: 1/5
 ----------------------------------------
 Turn 1:
-  User: Can you tell us what you mean by...
-  Assistant: I mean what you're asking right now.
+  User: So what is the parent weather in Delhi?
+  Assistant: 🌤️ Weather in Delhi, India:, 32°C, Widespread Dust, Thunderstorm, Dust Storm, Rain With Thunderstorm, (feels like 30°C), Humidity: 41%, Wind: 17 km/h WSW
 
 ----------------------------------------
 END OF MEMORY UPDATE
 
 
-[16:14:17] CONVERSATION MEMORY UPDATE
+[17:13:28] CONVERSATION MEMORY UPDATE
 Total turns stored: 2/5
 ----------------------------------------
 Turn 1:
-  User: Can you tell us what you mean by...
-  Assistant: I mean what you're asking right now.
+  User: So what is the parent weather in Delhi?
+  Assistant: 🌤️ Weather in Delhi, India:, 32°C, Widespread Dust, Thunderstorm, Dust Storm, Rain With Thunderstorm, (feels like 30°C), Humidity: 41%, Wind: 17 km/h WSW
 
 Turn 2:
-  User: the difference between
-  Assistant: I heard you, but I'm not sure what action to take.
+  User: What is 251 times 712?
+  Assistant: 🧮 **251*712 = 178712**
 
 ----------------------------------------
 END OF MEMORY UPDATE
 
 
-[16:14:44] CONVERSATION MEMORY UPDATE
+[17:13:43] CONVERSATION MEMORY UPDATE
 Total turns stored: 3/5
 ----------------------------------------
 Turn 1:
-  User: Can you tell us what you mean by...
-  Assistant: I mean what you're asking right now.
+  User: So what is the parent weather in Delhi?
+  Assistant: 🌤️ Weather in Delhi, India:, 32°C, Widespread Dust, Thunderstorm, Dust Storm, Rain With Thunderstorm, (feels like 30°C), Humidity: 41%, Wind: 17 km/h WSW
 
 Turn 2:
-  User: the difference between
-  Assistant: I heard you, but I'm not sure what action to take.
+  User: What is 251 times 712?
+  Assistant: 🧮 **251*712 = 178712**
 
 Turn 3:
-  User: What is the difference between a tiger and a wolf?
-  Assistant: The difference between a tiger and a wolf lies in their physical characteristics, habitat, and behavior. Tigers are large cats known for their stripes and strength, while wolves are canines that live in packs and are primarily carnivorous. They also differ in size and habitat, with tigers being larger and living in forests, while wolves are more commonly found in open areas.
+  User: That is the current weather in New Delhi.
+  Assistant: I heard you, but I'm not sure what action to take.
 
 ----------------------------------------
 END OF MEMORY UPDATE
 
 
-[16:15:00] CONVERSATION MEMORY UPDATE
+[17:14:03] CONVERSATION MEMORY UPDATE
 Total turns stored: 4/5
 ----------------------------------------
 Turn 1:
-  User: Can you tell us what you mean by...
-  Assistant: I mean what you're asking right now.
+  User: So what is the parent weather in Delhi?
+  Assistant: 🌤️ Weather in Delhi, India:, 32°C, Widespread Dust, Thunderstorm, Dust Storm, Rain With Thunderstorm, (feels like 30°C), Humidity: 41%, Wind: 17 km/h WSW
 
 Turn 2:
-  User: the difference between
+  User: What is 251 times 712?
+  Assistant: 🧮 **251*712 = 178712**
+
+Turn 3:
+  User: That is the current weather in New Delhi.
+  Assistant: I heard you, but I'm not sure what action to take.
+
+Turn 4:
+  User: What is the current weather in new value?
+  Assistant: 🌤️ Weather in New Delhi, India:, 32°C, Widespread Dust, Thunderstorm, Dust Storm, Rain With Thunderstorm, (feels like 30°C), Humidity: 41%, Wind: 8 km/h WSW
+
+----------------------------------------
+END OF MEMORY UPDATE
+
+
+[17:14:20] CONVERSATION MEMORY UPDATE
+Total turns stored: 5/5
+----------------------------------------
+Turn 1:
+  User: So what is the parent weather in Delhi?
+  Assistant: 🌤️ Weather in Delhi, India:, 32°C, Widespread Dust, Thunderstorm, Dust Storm, Rain With Thunderstorm, (feels like 30°C), Humidity: 41%, Wind: 17 km/h WSW
+
+Turn 2:
+  User: What is 251 times 712?
+  Assistant: 🧮 **251*712 = 178712**
+
+Turn 3:
+  User: That is the current weather in New Delhi.
+  Assistant: I heard you, but I'm not sure what action to take.
+
+Turn 4:
+  User: What is the current weather in new value?
+  Assistant: 🌤️ Weather in New Delhi, India:, 32°C, Widespread Dust, Thunderstorm, Dust Storm, Rain With Thunderstorm, (feels like 30°C), Humidity: 41%, Wind: 8 km/h WSW
+
+Turn 5:
+  User: What is 200 times 400?
+  Assistant: 🧮 **200*400 = 80000**
+
+----------------------------------------
+END OF MEMORY UPDATE
+
+
+[17:14:40] CONVERSATION MEMORY UPDATE
+Total turns stored: 5/5
+----------------------------------------
+Turn 1:
+  User: What is 251 times 712?
+  Assistant: 🧮 **251*712 = 178712**
+
+Turn 2:
+  User: That is the current weather in New Delhi.
   Assistant: I heard you, but I'm not sure what action to take.
 
 Turn 3:
-  User: What is the difference between a tiger and a wolf?
-  Assistant: The difference between a tiger and a wolf lies in their physical characteristics, habitat, and behavior. Tigers are large cats known for their stripes and strength, while wolves are canines that live in packs and are primarily carnivorous. They also differ in size and habitat, with tigers being larger and living in forests, while wolves are more commonly found in open areas.
+  User: What is the current weather in new value?
+  Assistant: 🌤️ Weather in New Delhi, India:, 32°C, Widespread Dust, Thunderstorm, Dust Storm, Rain With Thunderstorm, (feels like 30°C), Humidity: 41%, Wind: 8 km/h WSW
 
 Turn 4:
-  User: What is 27 times 300?
-  Assistant: 🧮 **27*300 = 8100**
-
-----------------------------------------
-END OF MEMORY UPDATE
-
-
-[16:15:28] CONVERSATION MEMORY UPDATE
-Total turns stored: 5/5
-----------------------------------------
-Turn 1:
-  User: Can you tell us what you mean by...
-  Assistant: I mean what you're asking right now.
-
-Turn 2:
-  User: the difference between
-  Assistant: I heard you, but I'm not sure what action to take.
-
-Turn 3:
-  User: What is the difference between a tiger and a wolf?
-  Assistant: The difference between a tiger and a wolf lies in their physical characteristics, habitat, and behavior. Tigers are large cats known for their stripes and strength, while wolves are canines that live in packs and are primarily carnivorous. They also differ in size and habitat, with tigers being larger and living in forests, while wolves are more commonly found in open areas.
-
-Turn 4:
-  User: What is 27 times 300?
-  Assistant: 🧮 **27*300 = 8100**
+  User: What is 200 times 400?
+  Assistant: 🧮 **200*400 = 80000**
 
 Turn 5:
-  User: convert 516 hours into...
-  Assistant: 🧮 **516 hours = 516*h*o*r*s*u**
+  User: What is the current weather in New Delhi?
+  Assistant: 🌤️ Weather in New Delhi, India:, 32°C, Widespread Dust, Thunderstorm, Dust Storm, Rain With Thunderstorm, (feels like 30°C), Humidity: 41%, Wind: 8 km/h WSW
 
 ----------------------------------------
 END OF MEMORY UPDATE
 
 
-[16:15:39] CONVERSATION MEMORY UPDATE
+[17:14:57] CONVERSATION MEMORY UPDATE
 Total turns stored: 5/5
 ----------------------------------------
 Turn 1:
-  User: the difference between
+  User: That is the current weather in New Delhi.
   Assistant: I heard you, but I'm not sure what action to take.
 
 Turn 2:
-  User: What is the difference between a tiger and a wolf?
-  Assistant: The difference between a tiger and a wolf lies in their physical characteristics, habitat, and behavior. Tigers are large cats known for their stripes and strength, while wolves are canines that live in packs and are primarily carnivorous. They also differ in size and habitat, with tigers being larger and living in forests, while wolves are more commonly found in open areas.
+  User: What is the current weather in new value?
+  Assistant: 🌤️ Weather in New Delhi, India:, 32°C, Widespread Dust, Thunderstorm, Dust Storm, Rain With Thunderstorm, (feels like 30°C), Humidity: 41%, Wind: 8 km/h WSW
 
 Turn 3:
-  User: What is 27 times 300?
-  Assistant: 🧮 **27*300 = 8100**
+  User: What is 200 times 400?
+  Assistant: 🧮 **200*400 = 80000**
 
 Turn 4:
-  User: convert 516 hours into...
-  Assistant: 🧮 **516 hours = 516*h*o*r*s*u**
+  User: What is the current weather in New Delhi?
+  Assistant: 🌤️ Weather in New Delhi, India:, 32°C, Widespread Dust, Thunderstorm, Dust Storm, Rain With Thunderstorm, (feels like 30°C), Humidity: 41%, Wind: 8 km/h WSW
 
 Turn 5:
-  User: Oh
-  Assistant: Oh what?
+  User: If the radius of a circle is 7 cm then what is the area?
+  Assistant: 🧮 **pi*7^2 = 153.93804**
 
 ----------------------------------------
 END OF MEMORY UPDATE
 
 
-[16:16:01] CONVERSATION MEMORY UPDATE
+[17:15:26] CONVERSATION MEMORY UPDATE
 Total turns stored: 5/5
 ----------------------------------------
 Turn 1:
-  User: What is the difference between a tiger and a wolf?
-  Assistant: The difference between a tiger and a wolf lies in their physical characteristics, habitat, and behavior. Tigers are large cats known for their stripes and strength, while wolves are canines that live in packs and are primarily carnivorous. They also differ in size and habitat, with tigers being larger and living in forests, while wolves are more commonly found in open areas.
+  User: What is the current weather in new value?
+  Assistant: 🌤️ Weather in New Delhi, India:, 32°C, Widespread Dust, Thunderstorm, Dust Storm, Rain With Thunderstorm, (feels like 30°C), Humidity: 41%, Wind: 8 km/h WSW
 
 Turn 2:
-  User: What is 27 times 300?
-  Assistant: 🧮 **27*300 = 8100**
+  User: What is 200 times 400?
+  Assistant: 🧮 **200*400 = 80000**
 
 Turn 3:
-  User: convert 516 hours into...
-  Assistant: 🧮 **516 hours = 516*h*o*r*s*u**
+  User: What is the current weather in New Delhi?
+  Assistant: 🌤️ Weather in New Delhi, India:, 32°C, Widespread Dust, Thunderstorm, Dust Storm, Rain With Thunderstorm, (feels like 30°C), Humidity: 41%, Wind: 8 km/h WSW
 
 Turn 4:
-  User: Oh
-  Assistant: Oh what?
+  User: If the radius of a circle is 7 cm then what is the area?
+  Assistant: 🧮 **pi*7^2 = 153.93804**
 
 Turn 5:
-  User: Hello.
-  Assistant: Hello.
-
-----------------------------------------
-END OF MEMORY UPDATE
-
-
-[16:16:12] CONVERSATION MEMORY UPDATE
-Total turns stored: 5/5
-----------------------------------------
-Turn 1:
-  User: What is 27 times 300?
-  Assistant: 🧮 **27*300 = 8100**
-
-Turn 2:
-  User: convert 516 hours into...
-  Assistant: 🧮 **516 hours = 516*h*o*r*s*u**
-
-Turn 3:
-  User: Oh
-  Assistant: Oh what?
-
-Turn 4:
-  User: Hello.
-  Assistant: Hello.
-
-Turn 5:
-  User: How many days are 172?
-  Assistant: 🧮 **172 = 172**
-
-----------------------------------------
-END OF MEMORY UPDATE
-
-
-[16:16:27] CONVERSATION MEMORY UPDATE
-Total turns stored: 5/5
-----------------------------------------
-Turn 1:
-  User: convert 516 hours into...
-  Assistant: 🧮 **516 hours = 516*h*o*r*s*u**
-
-Turn 2:
-  User: Oh
-  Assistant: Oh what?
-
-Turn 3:
-  User: Hello.
-  Assistant: Hello.
-
-Turn 4:
-  User: How many days are 172?
-  Assistant: 🧮 **172 = 172**
-
-Turn 5:
-  User: How many days are in 172 hours?
-  Assistant: 🧮 **172 / 24 = 7.166666667**
-
-----------------------------------------
-END OF MEMORY UPDATE
-
-
-[16:16:43] CONVERSATION MEMORY UPDATE
-Total turns stored: 5/5
-----------------------------------------
-Turn 1:
-  User: Oh
-  Assistant: Oh what?
-
-Turn 2:
-  User: Hello.
-  Assistant: Hello.
-
-Turn 3:
-  User: How many days are 172?
-  Assistant: 🧮 **172 = 172**
-
-Turn 4:
-  User: How many days are in 172 hours?
-  Assistant: 🧮 **172 / 24 = 7.166666667**
-
-Turn 5:
-  User: How many seconds are in one day?
-  Assistant: 🧮 **24*60*60 = 86400**
-
-----------------------------------------
-END OF MEMORY UPDATE
-
-
-[16:17:02] CONVERSATION MEMORY UPDATE
-Total turns stored: 5/5
-----------------------------------------
-Turn 1:
-  User: Hello.
-  Assistant: Hello.
-
-Turn 2:
-  User: How many days are 172?
-  Assistant: 🧮 **172 = 172**
-
-Turn 3:
-  User: How many days are in 172 hours?
-  Assistant: 🧮 **172 / 24 = 7.166666667**
-
-Turn 4:
-  User: How many seconds are in one day?
-  Assistant: 🧮 **24*60*60 = 86400**
-
-Turn 5:
-  User: in the next video, thanks for watching and I will see you with another video, bye bye.
-  Assistant: ❌ Tool Error: Unknown error
-
-----------------------------------------
-END OF MEMORY UPDATE
-
-
-[16:17:11] CONVERSATION MEMORY UPDATE
-Total turns stored: 5/5
-----------------------------------------
-Turn 1:
-  User: How many days are 172?
-  Assistant: 🧮 **172 = 172**
-
-Turn 2:
-  User: How many days are in 172 hours?
-  Assistant: 🧮 **172 / 24 = 7.166666667**
-
-Turn 3:
-  User: How many seconds are in one day?
-  Assistant: 🧮 **24*60*60 = 86400**
-
-Turn 4:
-  User: in the next video, thanks for watching and I will see you with another video, bye bye.
-  Assistant: ❌ Tool Error: Unknown error
-
-Turn 5:
-  User: can you share dual and meeting for me?
-  Assistant: 📅 Event 'Meeting 1' scheduled for 2023-12-17 at 19:00 (Duration: 60 minutes)
+  User: if the radius of the circle is 7cm.
+  Assistant: I heard you, but I'm not sure what action to take.
 
 ----------------------------------------
 END OF MEMORY UPDATE
