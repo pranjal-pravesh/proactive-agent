@@ -13,6 +13,7 @@ from src.stt import SpeechToText
 from src.vad import VoiceActivityDetector
 from src.gating_classifiers import ActionableClassifier, ContextableClassifier
 from src.llm.qwen_llm import QwenLLM
+from src.llm.phi4_mini_llm import Phi4MiniLLM
 from src.rag.memory_store import add_to_knowledge_base, retrieve_context
 from src.tool_calls import ToolManager
 
@@ -153,11 +154,27 @@ class VoiceAssistant:
         
         self.console.print("[bold cyan]Initializing LLM module...[/bold cyan]")
         llm_config = self.config.get("llm", {})
-        self.llm = QwenLLM(
-            model_path=llm_config.get("model_path", "models/Qwen3-1.7B-Q4_0.gguf"),
-            n_ctx=llm_config.get("n_ctx", 2048),
-            n_threads=llm_config.get("n_threads", 8)
-        )
+        model_type = llm_config.get("model_type", "qwen3").lower()
+        
+        if model_type == "phi4mini":
+            self.llm = Phi4MiniLLM(
+                model_path=llm_config.get("model_path", "models/Phi-4-mini-instruct-Q4_K_M.gguf"),
+                n_ctx=llm_config.get("n_ctx", 2048),
+                n_threads=llm_config.get("n_threads", 8)
+            )
+        elif model_type == "qwen3":
+            self.llm = QwenLLM(
+                model_path=llm_config.get("model_path", "models/Qwen3-1.7B-Q4_0.gguf"),
+                n_ctx=llm_config.get("n_ctx", 2048),
+                n_threads=llm_config.get("n_threads", 8)
+            )
+        else:
+            self.console.print(f"[bold red]Unknown model type: {model_type}. Defaulting to Qwen3.[/bold red]")
+            self.llm = QwenLLM(
+                model_path=llm_config.get("model_path", "models/Qwen3-1.7B-Q4_0.gguf"),
+                n_ctx=llm_config.get("n_ctx", 2048),
+                n_threads=llm_config.get("n_threads", 8)
+            )
         
         self.console.print("[bold cyan]Initializing Actionable Classifier...[/bold cyan]")
         self.actionable_classifier = ActionableClassifier(
