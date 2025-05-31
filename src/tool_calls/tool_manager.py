@@ -4,8 +4,6 @@ from typing import Dict, Any, List, Optional
 from .calculator import Calculator
 from .weather import WeatherChecker
 from .calendar import CalendarScheduler
-from .search import WebSearcher
-from .file_manager import FileManager
 
 class ToolManager:
     """Manages tool calling integration with LLM"""
@@ -14,8 +12,6 @@ class ToolManager:
         self.tools = {
             "calculator": Calculator,
             "weather_checker": WeatherChecker,
-            "web_searcher": WebSearcher,
-            "file_manager": FileManager
         }
         # Calendar scheduler needs instance for state management
         self.calendar_scheduler = CalendarScheduler()
@@ -53,6 +49,11 @@ You have access to the following tools. When a user's request requires using a t
 }
 </tool_call>
 
+CRITICAL FORMATTING RULES:
+1. ALWAYS wrap the JSON with <tool_call> and </tool_call> tags
+2. For calculator: PRESERVE units like "degrees" in expressions (e.g., "sin(59 degrees)" not "sin(59)")
+3. Use exact mathematical notation as spoken by the user
+
 Available tools:
 
 """
@@ -80,32 +81,36 @@ Available tools:
 IMPORTANT TOOL CALLING RULES:
 1. ONLY use a tool when the user's request specifically requires tool functionality
 2. For simple questions that don't need tools, respond normally without tool calls
-3. Use the exact JSON format shown above for tool calls
-4. Always validate that required parameters are provided
-5. If a tool call fails, explain the error and suggest alternatives
+3. Use the EXACT JSON format shown above for tool calls - MUST include "tool_name" and "parameters"
+4. ALWAYS wrap tool calls with <tool_call> and </tool_call> tags
+5. Always validate that required parameters are provided
+6. If a tool call fails, explain the error and suggest alternatives
+7. For calculator: PRESERVE mathematical units (degrees, radians, etc.) in expressions
+
+REQUIRED TOOL CALL FORMAT (DO NOT CHANGE):
+<tool_call>
+{
+    "tool_name": "calculator",
+    "parameters": {
+        "expression": "your_expression_here"
+    }
+}
+</tool_call>
 
 Examples:
-- "What's 15 + 27?" -> Use calculator tool with expression "15 + 27"
-- "What's the perimeter of a circle with radius 5?" -> Use calculator tool with expression "2*pi*5"
-- "What's the area of a circle with radius 3?" -> Use calculator tool with expression "pi*3^2"
-- "What's 7 factorial?" -> Use calculator tool with expression "7!" or "factorial(7)"
+- "What's 15 + 27?" -> Use calculator tool
+- "What's the area of a circle with radius 5?" -> Use calculator tool  
 - "What's the weather like?" -> Use weather_checker tool
 - "Schedule a meeting tomorrow" -> Use calendar_scheduler tool
 - "How are you today?" -> Respond normally, no tool needed
 
-CALCULATOR TOOL SPECIFIC RULES:
-- Always convert geometry problems to mathematical formulas
-- Circle perimeter: 2*pi*r, Circle area: pi*r^2
-- Rectangle area: length*width, Rectangle perimeter: 2*(length+width)
-- Triangle area: 0.5*base*height
-- Use mathematical notation, NOT natural language descriptions
-- For questions asking for multiple values (like "perimeter AND area"), make separate calculations or explain both separately
-- Don't add quantities with different units (e.g., don't add perimeter + area)
-- Use "evaluate" mode for calculating numerical results (most common)
-- Use "solve" mode only when you need to find variable values that make an equation equal to zero
-- Examples:
-  * "What's the radius if area is 200?" → use "evaluate" mode with "sqrt(200/pi)"
-  * "Find x where x^2 - 4 = 0" → use "solve" mode with "x^2 - 4"
+GENERAL TOOL GUIDELINES:
+- Use tools when the request requires computation, external data, or specific functionality
+- For calculator: Use mathematical expressions, not natural language
+- For calculator: KEEP units like "degrees" in the expression (e.g., "sin(59 degrees)")
+- For weather: Provide location if available
+- For calendar: Include date/time details when scheduling
+- Always use "evaluate" mode for calculator unless specifically solving equations
 """
         
         return prompt
@@ -130,6 +135,15 @@ CALCULATOR TOOL SPECIFIC RULES:
                 print(f"[DEBUG] Found tool call JSON with pattern: {tool_call_json}")
                 break
         
+        # If no wrapped tool call found, check for bare JSON tool call
+        if not tool_call_json:
+            # Look for bare JSON that looks like a tool call
+            bare_json_pattern = r'^\s*(\{"tool_name":\s*"[^"]+",\s*"parameters":\s*\{[^}]*\}\})\s*$'
+            match = re.search(bare_json_pattern, response.strip(), re.MULTILINE)
+            if match:
+                tool_call_json = match.group(1).strip()
+                print(f"[DEBUG] Found bare JSON tool call: {tool_call_json}")
+        
         if not tool_call_json:
             print(f"[DEBUG] No tool call pattern found in response: {repr(response[:200])}")
             return None
@@ -148,6 +162,17 @@ CALCULATOR TOOL SPECIFIC RULES:
             if json_candidate.startswith('{') and json_candidate.endswith('}'):
                 try:
                     tool_call = json.loads(json_candidate)
+                    
+                    # Check if this is a malformed calculator call (missing tool_name and parameters wrapper)
+                    if "expression" in tool_call and "tool_name" not in tool_call:
+                        print(f"[DEBUG] Detected malformed calculator call, fixing...")
+                        # Fix the structure
+                        fixed_tool_call = {
+                            "tool_name": "calculator",
+                            "parameters": tool_call
+                        }
+                        print(f"[DEBUG] Fixed tool call: {fixed_tool_call}")
+                        return fixed_tool_call
                     
                     # Validate tool call structure
                     if "tool_name" not in tool_call or "parameters" not in tool_call:
@@ -273,14 +298,6 @@ CALCULATOR TOOL SPECIFIC RULES:
         elif tool_name == "calendar_scheduler":
             if "message" in result:
                 return f"📅 {result['message']}"
-        
-        elif tool_name == "web_searcher":
-            if "summary" in result:
-                return f"🔍 {result['summary']}"
-            
-        elif tool_name == "file_manager":
-            if "message" in result:
-                return f"📁 {result['message']}"
         
         # Fallback: return raw result
         return f"🔧 {tool_name}: {json.dumps(result, indent=2)}" 

@@ -44,6 +44,23 @@ class Calculator:
         expr_str = re.sub(r'(\d+)!', r'factorial(\1)', expr_str)
         expr_str = re.sub(r'(\w+)!', r'factorial(\1)', expr_str)
         
+        # Handle degree notation - both degree symbol and word "degrees"
+        # First handle word "degrees" - convert to degree symbol for consistency
+        expr_str = re.sub(r'\b(\d+(?:\.\d+)?)\s+degrees?\b', r'\1°', expr_str, flags=re.IGNORECASE)
+        
+        # Handle degree symbol - convert degrees to radians for trig functions
+        # Pattern: sin(59°) -> sin(59*pi/180)
+        degree_pattern = r'(sin|cos|tan|asin|acos|atan)\s*\(\s*([^)]*?)°\s*\)'
+        def convert_degrees(match):
+            func = match.group(1)
+            angle = match.group(2)
+            return f'{func}({angle}*pi/180)'
+        
+        expr_str = re.sub(degree_pattern, convert_degrees, expr_str, flags=re.IGNORECASE)
+        
+        # Handle standalone degree values (e.g., 59° -> 59*pi/180)
+        expr_str = re.sub(r'(\d+(?:\.\d+)?)°', r'(\1*pi/180)', expr_str)
+        
         # Handle common function names
         replacements = {
             'ln': 'log',  # natural log in sympy is just log
@@ -51,7 +68,6 @@ class Calculator:
             'arcsin': 'asin',
             'arccos': 'acos',
             'arctan': 'atan',
-            'deg': 'pi/180*',  # convert degrees to radians
         }
         
         for old, new in replacements.items():

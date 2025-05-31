@@ -52,3 +52,7 @@
 [2025-05-31 00:03:09] Recently I made a creating classifier that can classify things as context table or non-context table and can also
 [2025-05-31 00:04:38] And that's it.  Thank you very much.  Have a nice day.  Bye.
 [2025-05-31 00:06:32] You know what I think, don't think, you don't.
+[2025-05-31 15:05:25] if the area of a circle is 144 centimeters apart and what is its radius
+[2025-05-31 15:07:40] I don't know what I'm talking about.
+[2025-05-31 15:35:20] If you say something random, then this audio doesn't take your action.  If it feels like you should take an action on an utterance, then it will say so.
+[2025-05-31 15:53:34] in this pic there is no comment in slide 6 but there is industry trends in slide 5 and 7.
