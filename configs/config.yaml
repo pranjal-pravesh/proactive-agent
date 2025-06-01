@@ -33,7 +33,7 @@ tts:
 llm:
   model_type: "qwen3"  # Model type: "qwen3" or "phi4mini"
   model_path: "models/Qwen3-1.7B-Q4_0.gguf"  # Path to the GGUF model
-  n_ctx: 2048  # Context window size
+  n_ctx: 8192  # Context window size
   n_threads: 8  # Number of CPU threads to use
   max_tokens: 2000  # Maximum tokens to generate
   temperature: 0.8  # Sampling temperature (increased for more variety)

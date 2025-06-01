@@ -3,7 +3,7 @@ import re
 from typing import Dict, Any, List, Optional
 from .calculator import Calculator
 from .weather import WeatherChecker
-from .calendar import CalendarScheduler
+from .google_calendar import GoogleCalendarManager
 
 class ToolManager:
     """Manages tool calling integration with LLM"""
@@ -13,16 +13,26 @@ class ToolManager:
             "calculator": Calculator,
             "weather_checker": WeatherChecker,
         }
-        # Calendar scheduler needs instance for state management
-        self.calendar_scheduler = CalendarScheduler()
-        self.tools["calendar_scheduler"] = self.calendar_scheduler
+        # Google Calendar manager needs instance for state management
+        try:
+            self.google_calendar = GoogleCalendarManager()
+            self.tools["google_calendar"] = self.google_calendar
+            print("✅ Google Calendar integration loaded successfully")
+        except Exception as e:
+            print(f"⚠️  Google Calendar not available: {str(e)}")
+            print("📋 To enable Google Calendar:")
+            print("   1. Install dependencies: pip install -r requirements_google_calendar.txt")
+            print("   2. Set up credentials: python setup_google_calendar.py")
+            print("   3. Restart the voice assistant")
+            print("🔧 Voice assistant will continue without Google Calendar functionality.")
+            # Don't add to tools if initialization failed
     
     def get_available_tools(self) -> List[Dict[str, Any]]:
         """Get list of available tools for LLM system prompt"""
         tool_descriptions = []
         
         for tool_name, tool_class in self.tools.items():
-            if tool_name == "calendar_scheduler":
+            if tool_name == "google_calendar":
                 tool_info = tool_class.get_tool_info()
             else:
                 tool_info = tool_class.get_tool_info()
@@ -53,6 +63,7 @@ CRITICAL FORMATTING RULES:
 1. ALWAYS wrap the JSON with <tool_call> and </tool_call> tags
 2. For calculator: PRESERVE units like "degrees" in expressions (e.g., "sin(59 degrees)" not "sin(59)")
 3. Use exact mathematical notation as spoken by the user
+4. For calendar: Use natural language for dates/times as the user speaks them
 
 Available tools:
 
@@ -86,6 +97,7 @@ IMPORTANT TOOL CALLING RULES:
 5. Always validate that required parameters are provided
 6. If a tool call fails, explain the error and suggest alternatives
 7. For calculator: PRESERVE mathematical units (degrees, radians, etc.) in expressions
+8. For calendar: Accept natural language dates/times and let the tool parse them
 
 SPECIFIC TOOL USAGE GUIDELINES:
 
@@ -100,12 +112,21 @@ WEATHER TOOL - Use ONLY for:
 - Current weather conditions ("what's the weather", "temperature", "is it raining")
 - Weather-related questions ("how hot is it", "weather forecast", "current conditions")
 - Location-specific weather ("weather in London", "temperature in Tokyo")
+- Parameters: location (required), units (optional: "m" for Celsius, "f" for Fahrenheit)
 - DO NOT use for: general location questions, travel info, or non-weather topics
 
-CALENDAR TOOL - Use ONLY for:
-- Scheduling meetings or events ("schedule a meeting", "book appointment")
-- Calendar management ("list my events", "cancel meeting")
-- Time-based planning activities
+GOOGLE CALENDAR TOOL - Use for:
+- Creating events: "schedule", "book", "create appointment", "set up meeting"
+- Viewing events: "what's on my calendar", "list events", "show my schedule"
+- Updating events: "move meeting", "change time", "update appointment"
+- Deleting events: "cancel meeting", "delete appointment", "remove event"
+- Finding availability: "find free time", "when am I available"
+- Calendar information: "list my calendars", "show calendar details"
+
+CALENDAR NATURAL LANGUAGE EXAMPLES:
+- Dates: "today", "tomorrow", "next Monday", "December 15th", "2024-01-15"
+- Times: "2 PM", "14:30", "9 AM", "noon", "10:30"
+- Durations: "1 hour", "30 minutes", "2 hours" (convert to minutes: 60, 30, 120)
 
 DO NOT USE TOOLS for:
 - General knowledge questions (history, geography, science facts)
@@ -113,32 +134,131 @@ DO NOT USE TOOLS for:
 - Casual conversation
 - Questions you can answer directly
 
-REQUIRED TOOL CALL FORMAT (DO NOT CHANGE):
+TOOL CALL EXAMPLES:
+
+CALCULATOR EXAMPLES:
 <tool_call>
 {
     "tool_name": "calculator",
     "parameters": {
-        "expression": "your_expression_here"
+        "expression": "15 + 27",
+        "mode": "evaluate"
     }
 }
 </tool_call>
 
-Examples:
-- "What's 15 + 27?" -> Use calculator tool
-- "What's the area of a circle with radius 5?" -> Use calculator tool  
-- "What's the weather like?" -> Use weather_checker tool
-- "Temperature in Paris" -> Use weather_checker tool
-- "Schedule a meeting tomorrow" -> Use calendar_scheduler tool
-- "What is the capital of France?" -> Respond normally, no tool needed
-- "How are you today?" -> Respond normally, no tool needed
+<tool_call>
+{
+    "tool_name": "calculator",
+    "parameters": {
+        "expression": "sin(59 degrees)",
+        "mode": "evaluate"
+    }
+}
+</tool_call>
+
+WEATHER EXAMPLES:
+<tool_call>
+{
+    "tool_name": "weather_checker",
+    "parameters": {
+        "location": "Paris",
+        "units": "m"
+    }
+}
+</tool_call>
+
+<tool_call>
+{
+    "tool_name": "weather_checker",
+    "parameters": {
+        "location": "New York, NY"
+    }
+}
+</tool_call>
+
+GOOGLE CALENDAR EXAMPLES:
+<tool_call>
+{
+    "tool_name": "google_calendar",
+    "parameters": {
+        "action": "create_event",
+        "title": "Team Meeting",
+        "date": "tomorrow",
+        "time": "2 PM",
+        "duration": 60,
+        "location": "Conference Room A"
+    }
+}
+</tool_call>
+
+<tool_call>
+{
+    "tool_name": "google_calendar",
+    "parameters": {
+        "action": "list_events",
+        "date": "today"
+    }
+}
+</tool_call>
+
+<tool_call>
+{
+    "tool_name": "google_calendar",
+    "parameters": {
+        "action": "list_events",
+        "start_date": "today",
+        "end_date": "next Friday"
+    }
+}
+</tool_call>
+
+<tool_call>
+{
+    "tool_name": "google_calendar",
+    "parameters": {
+        "action": "find_free_time",
+        "date": "tomorrow",
+        "duration": 30
+    }
+}
+</tool_call>
+
+USER REQUEST → TOOL USAGE MAPPING:
+- "What's 15 + 27?" → Use calculator tool
+- "Calculate the area of a circle with radius 5" → Use calculator tool  
+- "What's the weather like?" → Use weather_checker tool with location (user's location or ask for it)
+- "Temperature in Paris" → Use weather_checker tool with location="Paris"
+- "Weather in New Delhi" → Use weather_checker tool with location="New Delhi"
+- "Schedule a meeting tomorrow at 2 PM" → Use google_calendar tool (create_event)
+- "What are my events today?" → Use google_calendar tool (list_events) with date="today"
+- "Do I have meetings tomorrow?" → Use google_calendar tool (list_events) with date="tomorrow"
+- "Show me next week's calendar" → Use google_calendar tool (list_events) with start_date="next Monday", end_date="next Friday"
+- "Find free time tomorrow for 30 minutes" → Use google_calendar tool (find_free_time)
+- "Cancel my 3 PM meeting" → First list events to find the event ID, then delete
+- "Move my dentist appointment to next Tuesday" → First find the event, then update it
+- "What is the capital of France?" → Respond normally, no tool needed
+- "How are you today?" → Respond normally, no tool needed
+
+CALENDAR-SPECIFIC GUIDELINES:
+1. For event creation: Always include title, and optionally date, time, duration
+2. For event updates/deletions: You may need to first list events to find the event ID
+3. For scheduling: Accept natural language and let the Google Calendar tool parse it
+4. For attendees: Use comma-separated email addresses
+5. For duration: Convert hours to minutes (e.g., "2 hours" = 120 minutes)
+6. For recurring events: Use description field to note recurrence requirements
+7. Always provide helpful confirmation of what was scheduled
+8. IMPORTANT: Preserve the user's exact date/time words (if they say "tomorrow", use "tomorrow", not "today")
+9. For listing events: Use the exact timeframe the user requests
 
 GENERAL TOOL GUIDELINES:
 - Use tools when the request requires computation, external data, or specific functionality
 - For calculator: Use mathematical expressions, not natural language
 - For calculator: KEEP units like "degrees" in the expression (e.g., "sin(59 degrees)")
 - For weather: Provide location if available
-- For calendar: Include date/time details when scheduling
+- For calendar: Include as much detail as the user provides
 - Always use "evaluate" mode for calculator unless specifically solving equations
+- Provide conversational responses along with tool calls when appropriate
 """
         
         return prompt
@@ -232,8 +352,10 @@ GENERAL TOOL GUIDELINES:
             tool = self.tools[tool_name]
             
             # Execute tool with parameters
-            if tool_name == "calendar_scheduler":
-                # Instance method for calendar
+            if tool_name == "google_calendar":
+                # Instance method for calendar - filter out any invalid parameters
+                action = parameters.get("action", "")
+                print(f"[DEBUG] Google Calendar action: {action}")
                 result = tool.execute(**parameters)
             else:
                 # Static method for other tools
@@ -250,6 +372,7 @@ GENERAL TOOL GUIDELINES:
             
         except Exception as e:
             print(f"[DEBUG] Tool execution failed with exception: {e}")
+            print(f"[DEBUG] Exception type: {type(e).__name__}")
             return {
                 "tool_name": tool_name,
                 "parameters": parameters,
@@ -327,9 +450,63 @@ GENERAL TOOL GUIDELINES:
         
         elif tool_name == "weather_checker":
             if "summary" in result:
-                return f"🌤️ {result['summary']}"
+                return f"{result['summary']}"
         
-        elif tool_name == "calendar_scheduler":
+        elif tool_name == "google_calendar":
+            result = tool_result.get("result", {})
+            action = result.get("action", "")
+            
+            if action == "create_event":
+                if "message" in result:
+                    return f"📅 {result['message']}"
+            elif action == "list_events":
+                events = result.get("events", [])
+                count = result.get("count", 0)
+                date_range = result.get("date_range", "")
+                
+                if count == 0:
+                    return f"📅 No events found for {date_range}"
+                elif count == 1:
+                    event = events[0]
+                    return f"📅 You have 1 event: '{event['title']}' at {event['start']} in {event['location'] or 'No location'}"
+                else:
+                    event_list = []
+                    for event in events[:3]:  # Show up to 3 events
+                        location_text = f" in {event['location']}" if event['location'] else ""
+                        event_list.append(f"'{event['title']}' at {event['start']}{location_text}")
+                    
+                    if count > 3:
+                        return f"📅 You have {count} events. First 3: {', '.join(event_list)}, and {count - 3} more."
+                    else:
+                        return f"📅 You have {count} events: {', '.join(event_list)}"
+            elif action == "find_free_time":
+                free_slots = result.get("free_slots", [])
+                date = result.get("date", "")
+                duration = result.get("requested_duration", 0)
+                
+                if not free_slots:
+                    return f"📅 No free time slots found for {duration} minutes on {date}"
+                elif len(free_slots) == 1:
+                    slot = free_slots[0]
+                    return f"📅 Found 1 free slot on {date}: {slot['start_time']} - {slot['end_time']} ({slot['duration_available']} min available)"
+                else:
+                    slot_list = [f"{slot['start_time']}-{slot['end_time']}" for slot in free_slots[:3]]
+                    return f"📅 Found {len(free_slots)} free slots on {date}: {', '.join(slot_list)}"
+            elif action in ["update_event", "delete_event"]:
+                if "message" in result:
+                    return f"📅 {result['message']}"
+            elif action == "get_event_details":
+                event = result.get("event", {})
+                if event:
+                    location_text = f" in {event.get('location', 'No location')}" if event.get('location') else ""
+                    return f"📅 Event: '{event.get('title')}' on {event.get('start')}{location_text}"
+            elif action == "list_calendars":
+                calendars = result.get("calendars", [])
+                count = result.get("count", 0)
+                primary_cal = next((cal['name'] for cal in calendars if cal.get('primary')), 'Unknown')
+                return f"📅 You have {count} calendars. Primary: {primary_cal}"
+            
+            # Fallback for other calendar actions
             if "message" in result:
                 return f"📅 {result['message']}"
         
