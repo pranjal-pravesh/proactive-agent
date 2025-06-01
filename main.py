@@ -18,6 +18,7 @@ except ImportError:
 
 from src.stt import SpeechToText
 from src.vad import VoiceActivityDetector
+from src.tts import TextToSpeech
 from src.gating_classifiers import ActionableClassifier, ContextableClassifier
 from src.llm.qwen_llm import QwenLLM
 from src.llm.phi4_mini_llm import Phi4MiniLLM
@@ -159,6 +160,21 @@ class VoiceAssistant:
             threshold=self.config.get("vad", {}).get("threshold", 0.5)
         )
         
+        # Initialize TTS
+        tts_config = self.config.get("tts", {})
+        self.tts_enabled = tts_config.get("enabled", True)
+        if self.tts_enabled:
+            self.console.print("[bold cyan]Initializing TTS module...[/bold cyan]")
+            self.tts = TextToSpeech(
+                rate=tts_config.get("rate", 200),
+                volume=tts_config.get("volume", 0.9),
+                voice=tts_config.get("voice"),
+                console=self.console
+            )
+        else:
+            self.tts = None
+            self.console.print("[bold yellow]TTS disabled in configuration[/bold yellow]")
+        
         self.console.print("[bold cyan]Initializing LLM module...[/bold cyan]")
         llm_config = self.config.get("llm", {})
         model_type = llm_config.get("model_type", "qwen3").lower()
@@ -216,6 +232,9 @@ class VoiceAssistant:
         max_turns = conv_memory_config.get("max_turns", 5)
         self.conversation_memory = ConversationMemory(max_turns=max_turns)
         self.include_history_in_prompt = conv_memory_config.get("include_in_prompt", True)
+        
+        # Initialize actionable sentence logger
+        self._setup_actionable_logger()
         
         # Initialize tool manager
         self.console.print("[bold cyan]Initializing Tool Manager...[/bold cyan]")
@@ -373,6 +392,11 @@ class VoiceAssistant:
                 self.conversation_memory.clear()
                 self.console.print("[bold magenta]Conversation memory reset![/bold magenta]")
                 self.last_response = "Conversation memory has been reset."
+                
+                # Speak the response if TTS is enabled
+                if self.tts_enabled and self.tts:
+                    self.tts.speak_async(self.last_response)
+                
                 self.total_processing_time = time.time() - start_time
                 self.buffered_audio = []
                 self.speech_active = False
@@ -401,6 +425,9 @@ class VoiceAssistant:
             
             # Only process further if transcript is actionable
             if actionable_result["actionable"]:
+                # Log this actionable sentence for data collection
+                self._log_actionable_sentence(self.last_transcript, actionable_result["confidence"])
+                
                 # Retrieve relevant contextable memory
                 contexts = retrieve_context(self.last_transcript, k=5)
                 context_block = "\n".join(f"- {ctx}" for ctx in contexts)
@@ -478,6 +505,10 @@ class VoiceAssistant:
                 self.console.print("[bold magenta]Not adding to context memory[/bold magenta]")
             
             self.console.print(f"[bold green]Response:[/bold green] {self.last_response}")  # Show response display
+            
+            # Speak the response if TTS is enabled
+            if self.tts_enabled and self.tts and self.last_response:
+                self.tts.speak_async(self.last_response)
         
         # Update total processing time
         self.total_processing_time = time.time() - start_time
@@ -485,6 +516,44 @@ class VoiceAssistant:
         # Reset state
         self.buffered_audio = []
         self.speech_active = False
+    
+    def _setup_actionable_logger(self):
+        """Setup logging for actionable sentences."""
+        import os
+        from datetime import datetime
+        
+        # Create memory directory if it doesn't exist
+        os.makedirs("memory", exist_ok=True)
+        
+        # Initialize actionable sentences log file
+        self.actionable_log_file = "memory/actionable_sentences.txt"
+        
+        # Write header if file doesn't exist
+        if not os.path.exists(self.actionable_log_file):
+            with open(self.actionable_log_file, 'w', encoding='utf-8') as f:
+                f.write("=" * 70 + "\n")
+                f.write("ACTIONABLE SENTENCES DATA COLLECTION LOG\n")
+                f.write(f"Log started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write("=" * 70 + "\n\n")
+                f.write("Format: [TIMESTAMP] CONFIDENCE=X.XX | TEXT\n\n")
+    
+    def _log_actionable_sentence(self, transcript: str, confidence: float):
+        """
+        Log an actionable sentence for data collection.
+        
+        Args:
+            transcript: The actionable sentence
+            confidence: Confidence score from the classifier
+        """
+        from datetime import datetime
+        
+        try:
+            with open(self.actionable_log_file, 'a', encoding='utf-8') as f:
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                f.write(f"[{timestamp}] CONFIDENCE={confidence:.3f} | {transcript}\n")
+                f.flush()  # Ensure immediate write
+        except Exception as e:
+            self.console.print(f"[yellow]Warning: Could not log actionable sentence: {e}[/yellow]")
     
     def run(self):
         """
@@ -513,6 +582,12 @@ class VoiceAssistant:
                     live.update(self._render_panel())
             except KeyboardInterrupt:
                 self.console.print("\n[bold red]Stopping Voice Assistant...[/bold red]")
+                
+                # Cleanup TTS
+                if self.tts_enabled and self.tts:
+                    self.console.print("[cyan]Shutting down TTS...[/cyan]")
+                    self.tts.shutdown()
+                
                 stream.stop()
                 stream.close()
 

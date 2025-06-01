@@ -18,6 +18,17 @@ vad:
   min_speech_duration_ms: 150  # Minimum speech duration in milliseconds
   speech_pad_ms: 400  # Additional padding around speech in milliseconds
 
+# Text-to-Speech settings
+tts:
+  enabled: true  # Enable/disable text-to-speech
+  rate: 200  # Speech rate in words per minute (100-300 recommended)
+  volume: 0.9  # Volume level (0.0 to 1.0)
+  voice: null  # Voice ID to use (null for system default)
+  # Available voices vary by system. Common options:
+  # Windows: "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_MS_EN-US_ZIRA_11.0"
+  # macOS: "com.apple.speech.synthesis.voice.Alex"
+  # Linux: depends on espeak/festival installation
+
 # LLM settings
 llm:
   model_type: "qwen3"  # Model type: "qwen3" or "phi4mini"

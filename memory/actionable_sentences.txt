@@ -1,0 +1,15 @@
+======================================================================
+ACTIONABLE SENTENCES DATA COLLECTION LOG
+Log started: 2025-06-01 17:30:03
+======================================================================
+
+Format: [TIMESTAMP] CONFIDENCE=X.XX | TEXT
+
+[2025-06-01 17:30:17] CONFIDENCE=0.986 | Control, control, control.
+[2025-06-01 17:30:45] CONFIDENCE=1.000 | But do you know what my name is?
+[2025-06-01 17:31:02] CONFIDENCE=1.000 | Do you know what I mean?
+[2025-06-01 17:31:17] CONFIDENCE=1.000 | What is the capital of India?
+[2025-06-01 17:32:05] CONFIDENCE=1.000 | What is the capital of India?
+[2025-06-01 17:32:25] CONFIDENCE=1.000 | And what is apparent towards this?
+[2025-06-01 17:32:52] CONFIDENCE=1.000 | What is the current weather condition?
+[2025-06-01 17:33:25] CONFIDENCE=0.978 | If the area of circle is 1000 centimetres, then what will be its radius?
