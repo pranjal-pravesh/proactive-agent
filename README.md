@@ -135,17 +135,35 @@ python -m spacy download en_core_web_sm
 ### 2. Download AI Models
 
 **LLM Model (Required):**
-Download Qwen3-1.7B-Q4_0.gguf (~1GB) and place in `models/` directory:
+Download Qwen3-1.7B model from the unsloth repository:
 ```bash
 # Create models directory
 mkdir models
 
-# Download from Hugging Face (example)
-# wget https://huggingface.co/Qwen/Qwen3-1.7B-GGUF/resolve/main/qwen3-1.7b-q4_0.gguf -O models/Qwen3-1.7B-Q4_0.gguf
+# Download the Q4_0 quantized model (1.06 GB) - recommended for most users
+wget https://huggingface.co/unsloth/Qwen3-1.7B-GGUF/resolve/main/Qwen3-1.7B-Q4_0.gguf -O models/Qwen3-1.7B-Q4_0.gguf
+
+# Alternative: For lower memory usage, download the Q2_K model (778 MB)
+# wget https://huggingface.co/unsloth/Qwen3-1.7B-GGUF/resolve/main/Qwen3-1.7B-Q2_K.gguf -O models/Qwen3-1.7B-Q2_K.gguf
+
+# Or browse all available quantizations at:
+# https://huggingface.co/unsloth/Qwen3-1.7B-GGUF/tree/main
 ```
 
 **Classification Models (Required):**
-The fine-tuned MobileBERT models should be placed in:
+Download the fine-tuned MobileBERT models using the following commands:
+```bash
+# Create models directory if not already created
+mkdir -p models
+
+# Clone the fine-tuned actionable classifier
+git clone https://huggingface.co/pranjal-pravesh/mobilebert-finetuned-actionable models/mobilebert-finetuned-actionable
+
+# Clone the fine-tuned contextable classifier
+git clone https://huggingface.co/pranjal-pravesh/mobilebert-finetuned-contextable models/mobilebert-finetuned-contextable
+```
+
+The models will be placed in:
 - `models/mobilebert-finetuned-actionable/`
 - `models/mobilebert-finetuned-contextable/`
 
