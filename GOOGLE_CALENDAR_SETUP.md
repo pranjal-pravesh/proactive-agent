@@ -23,7 +23,7 @@ This guide will help you set up Google Calendar integration for your voice assis
 ### Step 1: Install Dependencies
 
 ```bash
-pip install -r requirements_google_calendar.txt
+pip install -r requirements.txt
 ```
 
 ### Step 2: Create Google Cloud Project
